@@ -1,0 +1,10 @@
+.root {
+    -fx-padding: 24;
+    -fx-font-family: "Segoe UI", "Helvetica", "Arial", sans-serif;
+    -fx-font-size: 14px;
+}
+
+.error {
+    -fx-text-fill: #c0392b; /* piros hibaüzenet */
+}
+

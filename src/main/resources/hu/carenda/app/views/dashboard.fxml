@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="hu.carenda.app.ui.DashboardController"
+            stylesheets="@../css/app.css">
+    <top>
+        <ToolBar>
+            <Label text="Carenda – Szerviz admin" style="-fx-font-weight: bold;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button text="Kilépés" onAction="#onLogout"/>
+        </ToolBar>
+    </top>
+    <center>
+        <TabPane fx:id="tabPane">
+            <tabs>
+                <Tab text="Ügyfelek" closable="false">
+                    <BorderPane>
+                        <top>
+                            <HBox spacing="8">
+                                <padding>
+                                    <Insets top="8" right="8" bottom="8" left="8"/>
+                                </padding>
+                                <TextField fx:id="customerSearch" promptText="Keresés névre / telefonra" HBox.hgrow="ALWAYS"/>
+                                <Button text="Keres" onAction="#onCustomerSearch"/>
+                                <Button text="Új" onAction="#onCustomerNew"/>
+                                <Button text="Szerkeszt" onAction="#onCustomerEdit"/>
+                                <Button text="Töröl" onAction="#onCustomerDelete"/>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="customerTable">
+                                <columns>
+                                    <TableColumn fx:id="cId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="cName" text="Név" prefWidth="220"/>
+                                    <TableColumn fx:id="cPhone" text="Telefon" prefWidth="140"/>
+                                    <TableColumn fx:id="cEmail" text="E-mail" prefWidth="200"/>
+                                </columns>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+
+                <Tab text="Járművek" closable="false">
+                    <BorderPane>
+                        <top>
+                            <HBox spacing="8">
+                                <padding>
+                                    <Insets top="8" right="8" bottom="8" left="8"/>
+                                </padding>
+                                <TextField fx:id="vehicleSearch" promptText="Keresés rendszám / ügyfél" HBox.hgrow="ALWAYS"/>
+                                <Button text="Keres" onAction="#onVehicleSearch"/>
+                                <Button text="Új" onAction="#onVehicleNew"/>
+                                <Button text="Szerkeszt" onAction="#onVehicleEdit"/>
+                                <Button text="Töröl" onAction="#onVehicleDelete"/>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="vehicleTable">
+                                <columns>
+                                    <TableColumn fx:id="vId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="vPlate" text="Rendszám" prefWidth="120"/>
+                                    <TableColumn fx:id="vMakeModel" text="Gyártmány / Típus" prefWidth="220"/>
+                                    <TableColumn fx:id="vOwner" text="Ügyfél" prefWidth="220"/>
+                                </columns>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+                
+                <Tab text="Időpontok" closable="false">
+                    <BorderPane>
+                        <top>
+                            <HBox spacing="8">
+                                <padding>
+                                    <Insets top="8" right="8" bottom="8" left="8"/>
+                                </padding>
+                                <TextField fx:id="apptSearch" promptText="Keresés ügyfél / rendszám / megjegyzés" HBox.hgrow="ALWAYS"/>
+                                <Button text="Keres" onAction="#onApptSearch"/>
+                                <Button text="Új" onAction="#onApptNew"/>
+                                <Button text="Szerkeszt" onAction="#onApptEdit"/>
+                                <Button text="Töröl" onAction="#onApptDelete"/>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="apptTable">
+                                <columns>
+                                    <TableColumn fx:id="aId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="aWhen" text="Kezdés" prefWidth="160"/>
+                                    <TableColumn fx:id="aDuration" text="Perc" prefWidth="80"/>
+                                    <TableColumn fx:id="aCustomer" text="Ügyfél" prefWidth="220"/>
+                                    <TableColumn fx:id="aVehicle" text="Rendszám" prefWidth="120"/>
+                                    <TableColumn fx:id="aStatus" text="Státusz" prefWidth="120"/>
+                                    <TableColumn fx:id="aNote" text="Megjegyzés" prefWidth="260"/>
+                                </columns>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>
