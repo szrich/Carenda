@@ -27,18 +27,20 @@ public class AppointmentDao {
               FROM appointments
              ORDER BY start_ts DESC, id DESC
             """;
-        try (var c = Database.get();
-             var st = c.createStatement();
-             var rs = st.executeQuery(sql)) {
+        try (var c = Database.get(); var st = c.createStatement(); var rs = st.executeQuery(sql)) {
             List<Appointment> out = new ArrayList<>();
-            while (rs.next()) out.add(map(rs));
+            while (rs.next()) {
+                out.add(map(rs));
+            }
             return out;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    /** Keresés ügyfél név / rendszám / státusz / megjegyzés alapján. */
+    /**
+     * Keresés ügyfél név / rendszám / státusz / megjegyzés alapján.
+     */
     public List<Appointment> search(String q) {
         String like = "%" + q.trim().toLowerCase() + "%";
         String sql = """
@@ -52,15 +54,16 @@ public class AppointmentDao {
                 OR lower(a.note)    LIKE ?
              ORDER BY a.start_ts DESC, a.id DESC
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
             ps.setString(1, like);
             ps.setString(2, like);
             ps.setString(3, like);
             ps.setString(4, like);
             try (var rs = ps.executeQuery()) {
                 List<Appointment> out = new ArrayList<>();
-                while (rs.next()) out.add(map(rs));
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
                 return out;
             }
         } catch (Exception e) {
@@ -73,8 +76,7 @@ public class AppointmentDao {
             SELECT id, customer_id, vehicle_id, start_ts, duration, note, status
               FROM appointments WHERE id=?
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (var rs = ps.executeQuery()) {
                 return rs.next() ? map(rs) : null;
@@ -85,13 +87,12 @@ public class AppointmentDao {
     }
 
     public int insert(int customerId, int vehicleId, String startTs,
-                      int durationMinutes, String note, String status) {
+            int durationMinutes, String note, String status) {
         String sql = """
             INSERT INTO appointments(customer_id, vehicle_id, start_ts, duration, note, status)
             VALUES (?,?,?,?,?,?)
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (var c = Database.get(); var ps = c.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, customerId);
             ps.setInt(2, vehicleId);
             ps.setString(3, startTs);
@@ -108,14 +109,13 @@ public class AppointmentDao {
     }
 
     public void update(int id, int customerId, int vehicleId, String startTs,
-                       int durationMinutes, String note, String status) {
+            int durationMinutes, String note, String status) {
         String sql = """
             UPDATE appointments
                SET customer_id=?, vehicle_id=?, start_ts=?, duration=?, note=?, status=?
              WHERE id=?
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
             ps.setInt(1, customerId);
             ps.setInt(2, vehicleId);
             ps.setString(3, startTs);
@@ -131,12 +131,59 @@ public class AppointmentDao {
 
     public void delete(int id) {
         String sql = "DELETE FROM appointments WHERE id=?";
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+    // 1) Napi lekérdezés (YYYY-MM-DD)
+    public java.util.List<hu.carenda.app.model.Appointment> findForDay(String dayIso) {
+        String sql = """
+        SELECT id, customer_id, vehicle_id, start_ts, duration, note, status
+        FROM appointments
+        WHERE substr(start_ts,1,10)=?
+        ORDER BY start_ts
+    """;
+        try (var c = hu.carenda.app.db.Database.get(); var ps = c.prepareStatement(sql)) {
+            ps.setString(1, dayIso);
+            try (var rs = ps.executeQuery()) {
+                var out = new java.util.ArrayList<hu.carenda.app.model.Appointment>();
+                while (rs.next()) {
+                    var a = new hu.carenda.app.model.Appointment();
+                    a.setId(rs.getInt("id"));
+                    a.setCustomerId(rs.getInt("customer_id"));
+                    a.setVehicleId(rs.getInt("vehicle_id"));
+                    a.setStartTs(rs.getString("start_ts"));
+                    a.setDurationMinutes(rs.getInt("duration"));
+                    a.setNote(rs.getString("note"));
+                    a.setStatus(rs.getString("status"));
+                    out.add(a);
+                }
+                return out;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Appointment> findBetween(String fromIso, String toIso) {
+        var sql = "SELECT * FROM appointments WHERE start_ts >= ? AND start_ts < ? ORDER BY start_ts";
+        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
+            ps.setString(1, fromIso);
+            ps.setString(2, toIso);
+            try (var rs = ps.executeQuery()) {
+                var out = new ArrayList<Appointment>();
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
+                return out;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

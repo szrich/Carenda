@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="hu.carenda.app.ui.ScheduleController"
+            prefWidth="860" prefHeight="520">
+
+    <fx:define>
+        <ToggleGroup fx:id="viewToggle"/>
+    </fx:define>
+
+    <top>
+        <ToolBar>
+            <Label text="Nap: "/>
+            <DatePicker fx:id="dayPicker"/>
+
+            <Separator orientation="VERTICAL"/>
+
+            <RadioButton text="Nap"  fx:id="dayRadio"  toggleGroup="$viewToggle" selected="true"/>
+            <RadioButton text="Hét"  fx:id="weekRadio" toggleGroup="$viewToggle"/>
+
+            <Separator orientation="VERTICAL"/>
+
+            <Button text="Új…"     onAction="#onNew"/>
+            <Button text="Törlés"  onAction="#onDelete" fx:id="deleteBtn" disable="true"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button text="Frissít" onAction="#reload"/>
+        </ToolBar>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true">
+            <HBox spacing="8.0">
+                <!-- itt adjuk meg explicit az Insets-et -->
+                <padding>
+                    <Insets top="8.0" right="8.0" bottom="8.0" left="8.0"/>
+                </padding>
+
+                <VBox fx:id="timeGutter" prefWidth="70.0" spacing="0.0"/>
+                <StackPane style="-fx-background-color: -fx-base; -fx-background-insets: 0;">
+                    <Pane fx:id="canvas" prefWidth="700.0"/>
+                </StackPane>
+            </HBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

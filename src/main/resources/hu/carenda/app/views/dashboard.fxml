@@ -99,6 +99,11 @@
                         </center>
                     </BorderPane>
                 </Tab>
+                <Tab text="Naptár">
+                    <content>
+                        <fx:include source="schedule.fxml"/>
+                    </content>
+                </Tab>
             </tabs>
         </TabPane>
     </center>

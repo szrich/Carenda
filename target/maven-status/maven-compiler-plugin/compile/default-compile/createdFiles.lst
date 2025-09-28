@@ -1,6 +1,7 @@
 hu/carenda/app/ui/AppointmentFormController.class
 hu/carenda/app/ui/VehicleFormController$1.class
 hu/carenda/app/ui/Forms.class
+hu/carenda/app/ui/ScheduleController.class
 hu/carenda/app/model/Vehicle.class
 hu/carenda/app/ui/CustomerFormController.class
 hu/carenda/app/ui/DashboardController.class
