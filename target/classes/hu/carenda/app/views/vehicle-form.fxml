@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<GridPane xmlns:fx="http://javafx.com/fxml"
+          fx:controller="hu.carenda.app.ui.VehicleFormController"
+          hgap="12" vgap="10">
+  <padding>
+    <Insets top="16" right="16" bottom="16" left="16"/>
+  </padding>
+
+  <Label text="Rendszám:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+  <TextField fx:id="plate" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+  <Label text="Gyártmány/Típus:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+  <TextField fx:id="makeModel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+  <Label text="Ügyfél:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+  <ComboBox fx:id="ownerCombo" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="320"/>
+
+  <HBox spacing="10" alignment="CENTER_RIGHT" GridPane.rowIndex="3" GridPane.columnIndex="1">
+    <Button text="Mégse" onAction="#onCancel"/>
+    <Button text="Mentés" onAction="#onSave" defaultButton="true"/>
+  </HBox>
+</GridPane>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="hu.carenda.app.ui.AppointmentFormController">
+    <center>
+        <GridPane hgap="10" vgap="10" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="16" right="16" bottom="16" left="16"/>
+            </padding>
+
+            <!-- Sorok: 0.. -->
+            <Label text="Ügyfél:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="customerCombo" prefWidth="320"
+                      GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+            <Label text="Jármű:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="vehicleCombo" prefWidth="320"
+                      GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+            <Label text="Dátum:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <DatePicker fx:id="datePicker" prefWidth="160"
+                        GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+            <Label text="Idő:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <HBox spacing="8" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                <Spinner fx:id="hourSpinner" prefWidth="80"/>
+                <Label text=":"/>
+                <Spinner fx:id="minuteSpinner" prefWidth="80"/>
+            </HBox>
+
+            <Label text="Időtartam (perc):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+            <TextField fx:id="duration" prefWidth="160"
+                       GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+            <Label text="Státusz:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="statusCombo" prefWidth="160"
+                      GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+            <Label text="Megjegyzés:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+            <TextArea fx:id="note" prefRowCount="4" prefWidth="320"
+                      GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+        </GridPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="0" right="16" bottom="16" left="16"/>
+            </padding>
+            <Button text="Mégse" onAction="#onCancel"/>
+            <Button fx:id="saveBtn" text="Mentés" onAction="#onSave" defaultButton="true"/>
+        </HBox>
+    </bottom>
+</BorderPane>

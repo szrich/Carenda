@@ -1,0 +1,17 @@
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/MainApp.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/db/Database.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/model/Appointment.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/model/Customer.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/model/User.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/model/Vehicle.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/repository/AppointmentDao.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/repository/CustomerDao.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/repository/UserDao.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/repository/VehicleDao.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/service/AuthService.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/AppointmentFormController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/CustomerFormController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/DashboardController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/Forms.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/LoginController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/VehicleFormController.java
