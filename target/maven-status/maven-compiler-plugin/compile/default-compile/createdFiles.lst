@@ -3,6 +3,7 @@ hu/carenda/app/ui/VehicleFormController$1.class
 hu/carenda/app/ui/Forms.class
 hu/carenda/app/ui/ScheduleController.class
 hu/carenda/app/model/Vehicle.class
+hu/carenda/app/ui/AppointmentFormController$5.class
 hu/carenda/app/ui/CustomerFormController.class
 hu/carenda/app/ui/DashboardController.class
 hu/carenda/app/model/Appointment.class
@@ -15,6 +16,7 @@ hu/carenda/app/ui/VehicleFormController.class
 hu/carenda/app/ui/LoginController.class
 hu/carenda/app/repository/UserDao.class
 hu/carenda/app/repository/VehicleDao.class
+hu/carenda/app/ui/AppointmentFormController$6.class
 hu/carenda/app/repository/CustomerDao.class
 hu/carenda/app/ui/AppointmentFormController$1.class
 hu/carenda/app/repository/AppointmentDao.class

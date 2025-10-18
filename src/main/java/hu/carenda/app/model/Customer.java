@@ -28,4 +28,9 @@ public class Customer {
     public String getEmail() { return email.get(); }
     public void setEmail(String v) { email.set(v); }
     public StringProperty emailProperty() { return email; }
+    
+    @Override
+    public String toString() {
+        return getName() != null ? getName() : "";
+    }
 }

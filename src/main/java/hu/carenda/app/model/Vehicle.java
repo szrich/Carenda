@@ -33,4 +33,9 @@ public class Vehicle {
     public String getOwnerName() { return ownerName.get(); }
     public void setOwnerName(String v) { ownerName.set(v); }
     public StringProperty ownerNameProperty() { return ownerName; }
+    
+    @Override
+    public String toString() {
+        return getPlate() != null ? getPlate() : "";
+    }
 }

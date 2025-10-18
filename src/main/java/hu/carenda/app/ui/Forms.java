@@ -6,6 +6,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.Modality;
+import javafx.stage.Window;
+import hu.carenda.app.model.Appointment;
 
 public class Forms {
 
@@ -56,5 +59,16 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
+    
+    public static boolean openAppointmentDialog(Appointment editing, Window owner) {
+        javafx.stage.Stage dlg = appointment(editing); // <-- a meglévő gyárat újrahasznosítjuk
+        if (owner != null) {
+            dlg.initOwner(owner);
+            dlg.initModality(Modality.WINDOW_MODAL);
+        }
+        dlg.showAndWait();
+        return Boolean.TRUE.equals(dlg.getUserData()); // lásd: controller-ben állítjuk be Mentéskor
+    }
+    
 
 }

@@ -16,6 +16,12 @@
     <center>
         <TabPane fx:id="tabPane">
             <tabs>
+                <Tab text="Naptár" closable="false">
+                    <content>
+                        <fx:include source="schedule.fxml"/>
+                    </content>
+                </Tab>
+                
                 <Tab text="Ügyfelek" closable="false">
                     <BorderPane>
                         <top>
@@ -98,11 +104,6 @@
                             </TableView>
                         </center>
                     </BorderPane>
-                </Tab>
-                <Tab text="Naptár">
-                    <content>
-                        <fx:include source="schedule.fxml"/>
-                    </content>
                 </Tab>
             </tabs>
         </TabPane>

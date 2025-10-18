@@ -12,36 +12,48 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import hu.carenda.app.model.Appointment;
 
 public class DashboardController {
 
-    @FXML private TextField customerSearch, vehicleSearch;
-    @FXML private TableView<Customer> customerTable;
-    @FXML private TableColumn<Customer, Number> cId;
-    @FXML private TableColumn<Customer, String> cName, cPhone, cEmail;
+    @FXML
+    private TextField customerSearch, vehicleSearch;
+    @FXML
+    private TableView<Customer> customerTable;
+    @FXML
+    private TableColumn<Customer, Number> cId;
+    @FXML
+    private TableColumn<Customer, String> cName, cPhone, cEmail;
 
-    @FXML private TableView<Vehicle> vehicleTable;
-    @FXML private TableColumn<Vehicle, Number> vId;
-    @FXML private TableColumn<Vehicle, String> vPlate, vMakeModel, vOwner;
+    @FXML
+    private TableView<Vehicle> vehicleTable;
+    @FXML
+    private TableColumn<Vehicle, Number> vId;
+    @FXML
+    private TableColumn<Vehicle, String> vPlate, vMakeModel, vOwner;
 
-    @FXML private TabPane tabPane;
+    @FXML
+    private TabPane tabPane;
 
     private final CustomerDao customerDao = new CustomerDao();
     private final VehicleDao vehicleDao = new VehicleDao();
     private final ObservableList<Customer> customers = FXCollections.observableArrayList();
     private final ObservableList<Vehicle> vehicles = FXCollections.observableArrayList();
-    
+
     // Időpontok UI elemek
-    @FXML private TextField apptSearch;
-    @FXML private TableView<hu.carenda.app.model.Appointment> apptTable;
-    @FXML private TableColumn<hu.carenda.app.model.Appointment, Number> aId, aDuration;
-    @FXML private TableColumn<hu.carenda.app.model.Appointment, String> aWhen, aCustomer, aVehicle, aStatus, aNote;
+    @FXML
+    private TextField apptSearch;
+    @FXML
+    private TableView<hu.carenda.app.model.Appointment> apptTable;
+    @FXML
+    private TableColumn<hu.carenda.app.model.Appointment, Number> aId, aDuration;
+    @FXML
+    private TableColumn<hu.carenda.app.model.Appointment, String> aWhen, aCustomer, aVehicle, aStatus, aNote;
 
     // DAO + listák
     private final hu.carenda.app.repository.AppointmentDao apptDao = new hu.carenda.app.repository.AppointmentDao();
-    private final javafx.collections.ObservableList<hu.carenda.app.model.Appointment> appointments =
-        javafx.collections.FXCollections.observableArrayList();
-
+    private final javafx.collections.ObservableList<hu.carenda.app.model.Appointment> appointments
+            = javafx.collections.FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -65,7 +77,7 @@ public class DashboardController {
         System.out.println("[DBG] DashboardController initialized");
         customerSearch.setOnAction(e -> onCustomerSearch());
         vehicleSearch.setOnAction(e -> onVehicleSearch());
-        
+
         // Időpontok oszlopok
         aId.setCellValueFactory(d -> d.getValue().idProperty());
         aWhen.setCellValueFactory(d -> d.getValue().startTsProperty());
@@ -82,11 +94,15 @@ public class DashboardController {
         // Kezdeti töltés
         refreshAppointments();
 
-
     }
 
-    private void refreshCustomers() { customers.setAll(customerDao.findAll()); }
-    private void refreshVehicles() { vehicles.setAll(vehicleDao.findAllWithOwner()); }
+    private void refreshCustomers() {
+        customers.setAll(customerDao.findAll());
+    }
+
+    private void refreshVehicles() {
+        vehicles.setAll(vehicleDao.findAllWithOwner());
+    }
 
     // ---- ÜGYFELEK ----
     @FXML
@@ -106,15 +122,21 @@ public class DashboardController {
     public void onCustomerEdit() {
         System.out.println("[DBG] onCustomerEdit");
         var sel = customerTable.getSelectionModel().getSelectedItem();
-        if (sel != null) openCustomerForm(sel);
-        else new Alert(Alert.AlertType.INFORMATION, "Válassz ügyfelet a listából!").showAndWait();
+        if (sel != null) {
+            openCustomerForm(sel);
+        } else {
+            new Alert(Alert.AlertType.INFORMATION, "Válassz ügyfelet a listából!").showAndWait();
+        }
     }
 
     @FXML
     public void onCustomerDelete() {
         System.out.println("[DBG] onCustomerDelete");
         var sel = customerTable.getSelectionModel().getSelectedItem();
-        if (sel == null) { new Alert(Alert.AlertType.INFORMATION, "Válassz ügyfelet a törléshez!").showAndWait(); return; }
+        if (sel == null) {
+            new Alert(Alert.AlertType.INFORMATION, "Válassz ügyfelet a törléshez!").showAndWait();
+            return;
+        }
         var ok = new Alert(Alert.AlertType.CONFIRMATION,
                 "Törlöd: " + sel.getName() + "?", ButtonType.OK, ButtonType.CANCEL).showAndWait();
         if (ok.isPresent() && ok.get() == ButtonType.OK) {
@@ -151,15 +173,21 @@ public class DashboardController {
     public void onVehicleEdit() {
         System.out.println("[DBG] onVehicleEdit");
         var sel = vehicleTable.getSelectionModel().getSelectedItem();
-        if (sel != null) openVehicleForm(sel);
-        else new Alert(Alert.AlertType.INFORMATION, "Válassz járművet a listából!").showAndWait();
+        if (sel != null) {
+            openVehicleForm(sel);
+        } else {
+            new Alert(Alert.AlertType.INFORMATION, "Válassz járművet a listából!").showAndWait();
+        }
     }
 
     @FXML
     public void onVehicleDelete() {
         System.out.println("[DBG] onVehicleDelete");
         var sel = vehicleTable.getSelectionModel().getSelectedItem();
-        if (sel == null) { new Alert(Alert.AlertType.INFORMATION, "Válassz járművet a törléshez!").showAndWait(); return; }
+        if (sel == null) {
+            new Alert(Alert.AlertType.INFORMATION, "Válassz járművet a törléshez!").showAndWait();
+            return;
+        }
         var ok = new Alert(Alert.AlertType.CONFIRMATION,
                 "Törlöd a járművet: " + sel.getPlate() + "?", ButtonType.OK, ButtonType.CANCEL).showAndWait();
         if (ok.isPresent() && ok.get() == ButtonType.OK) {
@@ -175,9 +203,10 @@ public class DashboardController {
         dlg.showAndWait();
         refreshVehicles();
     }
-    
-    private void refreshAppointments() { appointments.setAll(apptDao.findAll()); }
 
+    private void refreshAppointments() {
+        appointments.setAll(apptDao.findAll());
+    }
 
     // ---- KILÉPÉS ----
     @FXML
@@ -187,51 +216,65 @@ public class DashboardController {
         s.setTitle("Carenda – Bejelentkezés");
         s.setScene(new Scene(new Label("Kijelentkeztél. Indítsd újra az appot vagy lépj be ismét."), 420, 260));
     }
-    
-    @FXML public void onApptSearch() {
-    String q = apptSearch.getText().trim();
-    appointments.setAll(q.isEmpty() ? apptDao.findAll() : apptDao.search(q));
-}
 
-@FXML public void onApptNew() {
-    var dlg = Forms.appointment(null);
-    dlg.initOwner(apptTable.getScene().getWindow());
-    dlg.initModality(javafx.stage.Modality.WINDOW_MODAL);
-    dlg.showAndWait();
-    refreshAppointments();
-}
-
-@FXML public void onApptEdit() {
-    var sel = apptTable.getSelectionModel().getSelectedItem();
-    if (sel == null) { new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION, "Válassz időpontot!").showAndWait(); return; }
-
-    // Editálás: egyszerű megoldás – új példány, azonos értékekkel
-    var editing = new hu.carenda.app.model.Appointment();
-    editing.setId(sel.getId());
-    editing.setCustomerId(sel.getCustomerId());
-    editing.setVehicleId(sel.getVehicleId());
-    editing.setStartTs(sel.getStartTs());
-    editing.setDurationMinutes(sel.getDurationMinutes());
-    editing.setNote(sel.getNote());
-    editing.setStatus(sel.getStatus());
-
-    var dlg = Forms.appointment(editing);
-    dlg.initOwner(apptTable.getScene().getWindow());
-    dlg.initModality(javafx.stage.Modality.WINDOW_MODAL);
-    dlg.showAndWait();
-    refreshAppointments();
-}
-
-@FXML public void onApptDelete() {
-    var sel = apptTable.getSelectionModel().getSelectedItem();
-    if (sel == null) { new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION, "Válassz időpontot a törléshez!").showAndWait(); return; }
-    var ok = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
-            "Törlöd az időpontot: " + sel.getCustomerName() + " – " + sel.getVehiclePlate() + " (" + sel.getStartTs() + ")?",
-            javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL).showAndWait();
-    if (ok.isPresent() && ok.get() == javafx.scene.control.ButtonType.OK) {
-        apptDao.delete(sel.getId());
-        refreshAppointments();
+    @FXML
+    public void onApptSearch() {
+        String q = apptSearch.getText().trim();
+        appointments.setAll(q.isEmpty() ? apptDao.findAll() : apptDao.search(q));
     }
-}
+
+    @FXML
+    public void onApptNew() {
+        var a = new Appointment();
+        a.setStartTs(java.time.LocalDateTime.now().withHour(10).withMinute(0).toString());
+        a.setDurationMinutes(60);
+        a.setStatus("TERVEZETT");
+
+        boolean saved = Forms.openAppointmentDialog(a, tabPane.getScene().getWindow());
+        if (saved) {
+            onApptSearch(); // a keresőmező aktuális szövege szerint frissít
+            // vagy: refreshAppointments();  // ha mindig az összeset akarod
+        }
+    }
+
+    @FXML
+    public void onApptEdit() {
+        var sel = apptTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION, "Válassz időpontot!").showAndWait();
+            return;
+        }
+
+        // Editálás: egyszerű megoldás – új példány, azonos értékekkel
+        var editing = new hu.carenda.app.model.Appointment();
+        editing.setId(sel.getId());
+        editing.setCustomerId(sel.getCustomerId());
+        editing.setVehicleId(sel.getVehicleId());
+        editing.setStartTs(sel.getStartTs());
+        editing.setDurationMinutes(sel.getDurationMinutes());
+        editing.setNote(sel.getNote());
+        editing.setStatus(sel.getStatus());
+
+        boolean saved = Forms.openAppointmentDialog(editing, apptTable.getScene().getWindow());
+        if (saved) {
+            onApptSearch(); // vagy refreshAppointments();
+        }
+    }
+
+    @FXML
+    public void onApptDelete() {
+        var sel = apptTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION, "Válassz időpontot a törléshez!").showAndWait();
+            return;
+        }
+        var ok = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                "Törlöd az időpontot: " + sel.getCustomerName() + " – " + sel.getVehiclePlate() + " (" + sel.getStartTs() + ")?",
+                javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL).showAndWait();
+        if (ok.isPresent() && ok.get() == javafx.scene.control.ButtonType.OK) {
+            apptDao.delete(sel.getId());
+            refreshAppointments();
+        }
+    }
 
 }

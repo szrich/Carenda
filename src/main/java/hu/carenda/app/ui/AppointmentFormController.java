@@ -10,6 +10,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,7 +21,13 @@ public class AppointmentFormController {
     @FXML
     private ComboBox<Customer> customerCombo;
     @FXML
+    private TextField phone;
+    @FXML
+    private TextField email;
+    @FXML
     private ComboBox<Vehicle> vehicleCombo;
+    @FXML
+    private TextField model;
 
     // ÚJ: DatePicker + óraspinner + percszpinner
     @FXML
@@ -68,6 +75,20 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getName());
             }
         });
+        customerCombo.valueProperty().addListener((obs, oldCustomer, newCustomer) -> {
+            if (newCustomer != null) {
+                phone.setText(newCustomer.getPhone());
+            } else {
+                phone.clear();
+            }
+        });
+        customerCombo.valueProperty().addListener((obs, oldEmail, newEmail) -> {
+            if (newEmail != null) {
+                email.setText(newEmail.getEmail());
+            } else {
+                email.clear();
+            }
+        });
 
         // Jármű megjelenítés
         vehicleCombo.setCellFactory(cb -> new ListCell<>() {
@@ -84,6 +105,13 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getPlate());
             }
         });
+        vehicleCombo.valueProperty().addListener((obs, oldModel, newModel) -> {
+            if (newModel != null) {
+                model.setText(newModel.getMakeModel());
+            } else {
+                model.clear();
+            }
+        });
 
         // Ügyfél → járművek betöltése
         customerCombo.valueProperty().addListener((obs, oldVal, nv) -> {
@@ -97,8 +125,8 @@ public class AppointmentFormController {
         });
 
         // Státuszok
-        statusCombo.setItems(FXCollections.observableArrayList("PLANNED", "CONFIRMED", "DONE", "CANCELLED"));
-        statusCombo.getSelectionModel().select("PLANNED");
+        statusCombo.setItems(FXCollections.observableArrayList("TERVEZETT", "BEFEJEZETT", "LEMONDOTT"));
+        statusCombo.getSelectionModel().select("TERVEZETT");
 
         // Dátum + idő alapérték: most
         datePicker.setValue(LocalDate.now());
@@ -116,10 +144,84 @@ public class AppointmentFormController {
             duration.setText("60");
         }
 
-// Ha valamiért az FXML onAction nem fut, kössük rá programból is
+        // Ha valamiért az FXML onAction nem fut, kössük rá programból is
         if (saveBtn != null) {
             saveBtn.setOnAction(e -> onSave());
         }
+
+        // Customer megjelenítés + "beírásból létrehozás" (JDK8 kompatibilis)
+        customerCombo.setConverter(new StringConverter<Customer>() {
+            @Override
+            public String toString(Customer c) {
+                return (c == null) ? "" : c.getName();
+            }
+
+            @Override
+            public Customer fromString(String s) {
+                if (s == null || s.isBlank()) {
+                    return null;
+                }
+
+                // van-e már ilyen név?
+                Customer existing = customerCombo.getItems().stream()
+                        .filter(x -> s.equalsIgnoreCase(x.getName()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existing != null) {
+                    return existing;
+                }
+
+                // Új ügyfél létrehozása a beírt névvel
+                Customer nc = new Customer();
+                nc.setId(0);                // jelzi, hogy új
+                nc.setName(s.trim());
+                // ha már be van írva telefon/email, átvesszük
+                if (phone != null) {
+                    nc.setPhone(phone.getText());
+                }
+                if (email != null) {
+                    nc.setEmail(email.getText());
+                }
+
+                customerCombo.getItems().add(nc);
+                customerCombo.getSelectionModel().select(nc);
+                return nc;
+            }
+        });
+
+        vehicleCombo.setConverter(new StringConverter<Vehicle>() {
+            @Override
+            public String toString(Vehicle v) {
+                return (v == null) ? "" : v.getPlate();  // a combón a rendszám látszik
+            }
+
+            @Override
+            public Vehicle fromString(String s) {
+                if (s == null || s.isBlank()) {
+                    return null;
+                }
+
+                Vehicle existing = vehicleCombo.getItems().stream()
+                        .filter(x -> s.equalsIgnoreCase(x.getPlate()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existing != null) {
+                    return existing;
+                }
+
+                Vehicle nv = new Vehicle();
+                nv.setId(0);                // új
+                nv.setPlate(s.trim());      // beírt érték a rendszám
+                if (model != null) {
+                    nv.setMakeModel(model.getText()); // típus/modell mezőből
+                }
+                vehicleCombo.getItems().add(nv);
+                vehicleCombo.getSelectionModel().select(nv);
+                return nv;
+            }
+        });
 
     }
 
@@ -172,8 +274,12 @@ public class AppointmentFormController {
     @FXML
     public void onSave() {
         try {
+            // --- 1️⃣ Adatok kiolvasása az űrlapból ---
             var c = customerCombo.getValue();
+            var ph = phone.getText();
+            var e = email.getText();
             var v = vehicleCombo.getValue();
+            var m = model.getText();
             var d = datePicker.getValue();
             var hh = hourSpinner.getValue();
             var mm = minuteSpinner.getValue();
@@ -181,13 +287,25 @@ public class AppointmentFormController {
             var st = statusCombo.getValue();
             var nt = note.getText();
 
-            // Validáció
+            // --- 2️⃣ Alapvető validációk ---
             if (c == null) {
-                new Alert(Alert.AlertType.WARNING, "Válassz ügyfelet.").showAndWait();
+                new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új ügyfelet.").showAndWait();
+                return;
+            }
+            if (ph == null) {
+                new Alert(Alert.AlertType.WARNING, "Írj be az ügyfélhez telefonszámot.").showAndWait();
+                return;
+            }
+            if (e == null) {
+                new Alert(Alert.AlertType.WARNING, "Írj be az ügyfélhez e-mail címet.").showAndWait();
                 return;
             }
             if (v == null) {
-                new Alert(Alert.AlertType.WARNING, "Válassz járművet.").showAndWait();
+                new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új járművet.").showAndWait();
+                return;
+            }
+            if (m == null) {
+                new Alert(Alert.AlertType.WARNING, "Írj be a gépjármű rendszámát.").showAndWait();
                 return;
             }
             if (d == null) {
@@ -207,20 +325,29 @@ public class AppointmentFormController {
                 return;
             }
 
-            // LocalDate + óra + perc → ISO-String "yyyy-MM-dd'T'HH:mm"
-            java.time.LocalDateTime ldt = d.atTime(hh == null ? 0 : hh, mm == null ? 0 : mm);
-            String when = ldt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+            // --- 3️⃣ Dátum + idő kombinálása ---
+            LocalDateTime ldt = d.atTime(hh == null ? 0 : hh, mm == null ? 0 : mm);
+            String when = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
 
-            if (editing == null) {
-                apptDao.insert(c.getId(), v.getId(), when, dur, nt, st);
+            // 4) Ügyfél + jármű UPSERT (INSERT vagy UPDATE)
+            int customerId = upsertCustomer(c, ph, e);
+            int vehicleId = upsertVehicle(v, customerId, m);
+
+// 5) Időpont INSERT/UPDATE
+            boolean isNew = (editing == null) || editing.getId() == 0;
+            if (isNew) {
+                apptDao.insert(customerId, vehicleId, when, dur, nt, st);
             } else {
-                apptDao.update(editing.getId(), c.getId(), v.getId(), when, dur, nt, st);
+                apptDao.update(editing.getId(), customerId, vehicleId, when, dur, nt, st);
             }
 
-            ((Stage) datePicker.getScene().getWindow()).close();
+// 6) jelez + zár
+            Stage stage = (Stage) datePicker.getScene().getWindow();
+            stage.setUserData(Boolean.TRUE);
+            stage.close();
 
         } catch (Exception ex) {
-            ex.printStackTrace(); // látszódjon a konzolon is
+            ex.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Mentési hiba: " + ex.getMessage()).showAndWait();
         }
     }
@@ -229,4 +356,67 @@ public class AppointmentFormController {
     public void onCancel() {
         ((Stage) datePicker.getScene().getWindow()).close();
     }
+
+    /**
+     * Insert vagy Update a customers táblában. Visszaadja az ID-t.
+     */
+    private int upsertCustomer(Customer c, String phoneStr, String emailStr) {
+        if (c == null) {
+            throw new IllegalArgumentException("customer null");
+        }
+        if (phoneStr != null && !phoneStr.isBlank()) {
+            c.setPhone(phoneStr.trim());
+        }
+        if (emailStr != null && !emailStr.isBlank()) {
+            c.setEmail(emailStr.trim());
+        }
+
+        if (c.getId() == 0) {
+            int newId = customerDao.insert(c.getName(), c.getPhone(), c.getEmail());
+            c.setId(newId);
+            return newId;
+        } else {
+            customerDao.update(c.getId(), c.getName(), c.getPhone(), c.getEmail());
+            return c.getId();
+        }
+    }
+
+    /**
+     * Insert vagy Update a vehicles táblában az adott customerId-vel.
+     * Visszaadja az ID-t.
+     */
+    private int upsertVehicle(Vehicle v, int customerId, String makeModelStr) {
+        if (v == null) {
+            throw new IllegalArgumentException("vehicle null");
+        }
+
+        // ha az űrlapon gépelték be/át, onnan vesszük a gyártmány/típust
+        if (makeModelStr != null && !makeModelStr.trim().isEmpty()) {
+            v.setMakeModel(makeModelStr.trim());
+        }
+
+        // ha van ownerId meződ a modelben, tartsuk szinkronban
+        try {
+            v.setOwnerId(customerId); // Vehicle-ben ez a mezőnév: ownerId
+        } catch (Throwable ignore) {
+            // ha nincs ilyen setter, semmi gond – a DAO paraméterben úgyis megkapja
+        }
+
+        // minimális védelem: rendszám ne legyen üres
+        if (v.getPlate() == null || v.getPlate().trim().isEmpty()) {
+            throw new IllegalArgumentException("A jármű rendszáma (plate) kötelező.");
+        }
+
+        if (v.getId() == 0) {
+            // ÚJ jármű – FIGYELEM: a DAO szignója (plate, makeModel, customerId)
+            int newId = vehicleDao.insert(v.getPlate(), v.getMakeModel(), customerId);
+            v.setId(newId);
+            return newId;
+        } else {
+            // Meglévő jármű frissítése – szignó: (id, plate, makeModel, customerId)
+            vehicleDao.update(v.getId(), v.getPlate(), v.getMakeModel(), customerId);
+            return v.getId();
+        }
+    }
+
 }

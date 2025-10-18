@@ -8,3 +8,35 @@
     -fx-text-fill: #c0392b; /* piros hibaüzenet */
 }
 
+/* ============================
+   IDŐPONT-STÁTUSZ SZÍNEK (ScheduleView)
+   ============================ */
+
+/* Alap kinézet minden időpontblokkhoz */
+.appt {
+    -fx-background-radius: 6;
+    -fx-padding: 6;
+    -fx-text-fill: white; /* öröklődik a gyerek Label-ektől is */
+}
+
+/* TERVEZETT = kék */
+.st-planned {
+    -fx-background-color: #2F7DF6;
+}
+
+/* LEMONDOTT = piros */
+.st-canceled {
+    -fx-background-color: #E53935;
+}
+
+/* BEFEJEZETT = zöld */
+.st-done {
+    -fx-background-color: #43A047;
+}
+
+/* Opcionális: enyhe átlátszóság hover-re */
+.appt:hover {
+    -fx-opacity: 0.92;
+}
+
+
