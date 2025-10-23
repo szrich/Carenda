@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import hu.carenda.app.model.Appointment;
+import javafx.beans.property.ReadOnlyStringWrapper;
 
 public class DashboardController {
 
@@ -28,9 +29,9 @@ public class DashboardController {
     @FXML
     private TableView<Vehicle> vehicleTable;
     @FXML
-    private TableColumn<Vehicle, Number> vId;
+    private TableColumn<Vehicle, Number> vId, vYear;
     @FXML
-    private TableColumn<Vehicle, String> vPlate, vMakeModel, vOwner;
+    private TableColumn<Vehicle, String> vPlate, vVin, vEngine_no, vBrand, vModel, vOdometer, vFuel_type, vOwner;
 
     @FXML
     private TabPane tabPane;
@@ -68,7 +69,16 @@ public class DashboardController {
         // Jármű oszlopok
         vId.setCellValueFactory(d -> d.getValue().idProperty());
         vPlate.setCellValueFactory(d -> d.getValue().plateProperty());
-        vMakeModel.setCellValueFactory(d -> d.getValue().makeModelProperty());
+        vVin.setCellValueFactory(d -> d.getValue().vinProperty());
+        vEngine_no.setCellValueFactory(d -> d.getValue().engine_noProperty());
+        vBrand.setCellValueFactory(d -> d.getValue().brandProperty());
+        vModel.setCellValueFactory(d -> d.getValue().modelProperty());
+        vYear.setCellValueFactory(d -> d.getValue().yearProperty());
+        vOdometer.setCellValueFactory(d -> {
+            Integer km = d.getValue().getOdometer_km();
+            return new ReadOnlyStringWrapper(km == null ? "" : km.toString());
+        });
+        vFuel_type.setCellValueFactory(d -> d.getValue().fuel_typeProperty());
         vOwner.setCellValueFactory(d -> d.getValue().ownerNameProperty());
         vehicleTable.setItems(vehicles);
 
@@ -82,7 +92,7 @@ public class DashboardController {
         aId.setCellValueFactory(d -> d.getValue().idProperty());
         aWhen.setCellValueFactory(d -> d.getValue().startTsProperty());
         aDuration.setCellValueFactory(d -> d.getValue().durationMinutesProperty());
-        aCustomer.setCellValueFactory(d -> d.getValue().customerNameProperty());
+        aCustomer.setCellValueFactory(d -> d.getValue().ownerNameProperty());
         aVehicle.setCellValueFactory(d -> d.getValue().vehiclePlateProperty());
         aStatus.setCellValueFactory(d -> d.getValue().statusProperty());
         aNote.setCellValueFactory(d -> d.getValue().noteProperty());
@@ -269,7 +279,7 @@ public class DashboardController {
             return;
         }
         var ok = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
-                "Törlöd az időpontot: " + sel.getCustomerName() + " – " + sel.getVehiclePlate() + " (" + sel.getStartTs() + ")?",
+                "Törlöd az időpontot: " + sel.getOwnerName() + " – " + sel.getVehiclePlate() + " (" + sel.getStartTs() + ")?",
                 javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL).showAndWait();
         if (ok.isPresent() && ok.get() == javafx.scene.control.ButtonType.OK) {
             apptDao.delete(sel.getId());

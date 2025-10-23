@@ -28,31 +28,34 @@
             <ComboBox fx:id="vehicleCombo" editable="true" prefWidth="320"
                       GridPane.rowIndex="3" GridPane.columnIndex="1"/>
             
-            <Label text="Gyártmány/Típus:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-            <TextField fx:id="model" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            <Label text="Gyártmány:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+            <TextField fx:id="brand" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            
+            <Label text="Típus:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+            <TextField fx:id="model" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
-            <Label text="Dátum:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+            <Label text="Dátum:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
             <DatePicker fx:id="datePicker" prefWidth="160"
-                        GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                        GridPane.rowIndex="6" GridPane.columnIndex="1"/>
 
-            <Label text="Idő:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-            <HBox spacing="8" GridPane.rowIndex="6" GridPane.columnIndex="1">
+            <Label text="Idő:" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+            <HBox spacing="8" GridPane.rowIndex="7" GridPane.columnIndex="1">
                 <Spinner fx:id="hourSpinner" prefWidth="80"/>
                 <Label text=":"/>
                 <Spinner fx:id="minuteSpinner" prefWidth="80"/>
             </HBox>
 
-            <Label text="Időtartam (perc):" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+            <Label text="Időtartam (perc):" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
             <TextField fx:id="duration" prefWidth="160"
-                       GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                       GridPane.rowIndex="8" GridPane.columnIndex="1"/>
 
-            <Label text="Státusz:" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+            <Label text="Státusz:" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
             <ComboBox fx:id="statusCombo" prefWidth="160"
-                      GridPane.rowIndex="8" GridPane.columnIndex="1"/>
-
-            <Label text="Megjegyzés:" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-            <TextArea fx:id="note" prefRowCount="4" prefWidth="320"
                       GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+
+            <Label text="Megjegyzés:" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+            <TextArea fx:id="note" prefRowCount="4" prefWidth="320"
+                      GridPane.rowIndex="10" GridPane.columnIndex="1"/>
         </GridPane>
     </center>
 

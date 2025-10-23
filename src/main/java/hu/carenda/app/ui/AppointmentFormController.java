@@ -27,6 +27,9 @@ public class AppointmentFormController {
     @FXML
     private ComboBox<Vehicle> vehicleCombo;
     @FXML
+    private TextField brand;
+
+    @FXML
     private TextField model;
 
     // ÚJ: DatePicker + óraspinner + percszpinner
@@ -105,9 +108,16 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getPlate());
             }
         });
+        vehicleCombo.valueProperty().addListener((obs, oldBrand, newBrand) -> {
+            if (newBrand != null) {
+                brand.setText(newBrand.getBrand());
+            } else {
+                brand.clear();
+            }
+        });
         vehicleCombo.valueProperty().addListener((obs, oldModel, newModel) -> {
             if (newModel != null) {
-                model.setText(newModel.getMakeModel());
+                model.setText(newModel.getModel());
             } else {
                 model.clear();
             }
@@ -215,7 +225,7 @@ public class AppointmentFormController {
                 nv.setId(0);                // új
                 nv.setPlate(s.trim());      // beírt érték a rendszám
                 if (model != null) {
-                    nv.setMakeModel(model.getText()); // típus/modell mezőből
+                    nv.setBrand(model.getText()); // típus/modell mezőből
                 }
                 vehicleCombo.getItems().add(nv);
                 vehicleCombo.getSelectionModel().select(nv);
@@ -279,6 +289,7 @@ public class AppointmentFormController {
             var ph = phone.getText();
             var e = email.getText();
             var v = vehicleCombo.getValue();
+            var b = brand.getText();
             var m = model.getText();
             var d = datePicker.getValue();
             var hh = hourSpinner.getValue();
@@ -304,8 +315,12 @@ public class AppointmentFormController {
                 new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új járművet.").showAndWait();
                 return;
             }
+            if (b == null) {
+                new Alert(Alert.AlertType.WARNING, "Írjd be a gépjármű tipusát.").showAndWait();
+                return;
+            }
             if (m == null) {
-                new Alert(Alert.AlertType.WARNING, "Írj be a gépjármű rendszámát.").showAndWait();
+                new Alert(Alert.AlertType.WARNING, "Írjd be a gépjármű tipusát.").showAndWait();
                 return;
             }
             if (d == null) {
@@ -331,7 +346,7 @@ public class AppointmentFormController {
 
             // 4) Ügyfél + jármű UPSERT (INSERT vagy UPDATE)
             int customerId = upsertCustomer(c, ph, e);
-            int vehicleId = upsertVehicle(v, customerId, m);
+            int vehicleId = upsertVehicle(v, customerId, b, m);
 
 // 5) Időpont INSERT/UPDATE
             boolean isNew = (editing == null) || editing.getId() == 0;
@@ -385,14 +400,18 @@ public class AppointmentFormController {
      * Insert vagy Update a vehicles táblában az adott customerId-vel.
      * Visszaadja az ID-t.
      */
-    private int upsertVehicle(Vehicle v, int customerId, String makeModelStr) {
+    private int upsertVehicle(Vehicle v, int customerId, String brandStr, String modelStr) {
         if (v == null) {
             throw new IllegalArgumentException("vehicle null");
         }
+        
+        if (brandStr != null && !brandStr.trim().isEmpty()) {
+            v.setBrand(brandStr.trim());
+        }
 
         // ha az űrlapon gépelték be/át, onnan vesszük a gyártmány/típust
-        if (makeModelStr != null && !makeModelStr.trim().isEmpty()) {
-            v.setMakeModel(makeModelStr.trim());
+        if (modelStr != null && !modelStr.trim().isEmpty()) {
+            v.setModel(modelStr.trim());
         }
 
         // ha van ownerId meződ a modelben, tartsuk szinkronban
@@ -409,12 +428,12 @@ public class AppointmentFormController {
 
         if (v.getId() == 0) {
             // ÚJ jármű – FIGYELEM: a DAO szignója (plate, makeModel, customerId)
-            int newId = vehicleDao.insert(v.getPlate(), v.getMakeModel(), customerId);
+            int newId = vehicleDao.insert(v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getOdometer_km(), v.getFuel_type(), customerId);
             v.setId(newId);
             return newId;
         } else {
             // Meglévő jármű frissítése – szignó: (id, plate, makeModel, customerId)
-            vehicleDao.update(v.getId(), v.getPlate(), v.getMakeModel(), customerId);
+            vehicleDao.update(v.getId(), v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getOdometer_km(), v.getFuel_type(), customerId);
             return v.getId();
         }
     }

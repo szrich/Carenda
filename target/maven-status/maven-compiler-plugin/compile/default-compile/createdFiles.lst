@@ -20,7 +20,9 @@ hu/carenda/app/ui/AppointmentFormController$6.class
 hu/carenda/app/repository/CustomerDao.class
 hu/carenda/app/ui/AppointmentFormController$1.class
 hu/carenda/app/repository/AppointmentDao.class
+hu/carenda/app/model/ServiceJobCard.class
 hu/carenda/app/model/Customer.class
 hu/carenda/app/ui/AppointmentFormController$3.class
 hu/carenda/app/service/AuthService.class
+hu/carenda/app/repository/ServiceJobCardDao.class
 hu/carenda/app/ui/VehicleFormController$2.class

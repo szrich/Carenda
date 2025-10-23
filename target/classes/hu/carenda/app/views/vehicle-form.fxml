@@ -6,21 +6,39 @@
 <GridPane xmlns:fx="http://javafx.com/fxml"
           fx:controller="hu.carenda.app.ui.VehicleFormController"
           hgap="12" vgap="10">
-  <padding>
-    <Insets top="16" right="16" bottom="16" left="16"/>
-  </padding>
+    <padding>
+        <Insets top="16" right="16" bottom="16" left="16"/>
+    </padding>
 
-  <Label text="Rendszám:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-  <TextField fx:id="plate" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+    <Label text="Ügyfél:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="ownerCombo" promptText="Válassz tulajt…" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="320"/>
 
-  <Label text="Gyártmány/Típus:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-  <TextField fx:id="makeModel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+    <Label text="Rendszám:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="plate" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+  
+    <Label text="Alvázszám:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <TextField fx:id="vin" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+  
+    <Label text="Motorszám:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <TextField fx:id="engine_no" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-  <Label text="Ügyfél:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-  <ComboBox fx:id="ownerCombo" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="320"/>
+    <Label text="Gyártmány:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+    <TextField fx:id="brand" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+  
+    <Label text="Típus:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+    <TextField fx:id="model" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+  
+    <Label text="Évjárat:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="yearPicker" GridPane.rowIndex="6" GridPane.columnIndex="1" prefWidth="320"/>
+  
+    <Label text="Km:" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+    <TextField fx:id="odometer_km" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+  
+    <Label text="Üzemanyag:" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="fuel_type" GridPane.rowIndex="8" GridPane.columnIndex="1" prefWidth="320"/>
 
-  <HBox spacing="10" alignment="CENTER_RIGHT" GridPane.rowIndex="3" GridPane.columnIndex="1">
-    <Button text="Mégse" onAction="#onCancel"/>
-    <Button text="Mentés" onAction="#onSave" defaultButton="true"/>
-  </HBox>
+    <HBox spacing="10" alignment="CENTER_RIGHT" GridPane.rowIndex="9" GridPane.columnIndex="1">
+        <Button text="Mégse" onAction="#onCancel"/>
+        <Button text="Mentés" fx:id="saveBtn" onAction="#onSave" defaultButton="true"/>
+    </HBox>
 </GridPane>

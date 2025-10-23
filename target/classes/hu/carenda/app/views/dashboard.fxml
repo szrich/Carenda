@@ -68,7 +68,13 @@
                                 <columns>
                                     <TableColumn fx:id="vId" text="ID" prefWidth="60"/>
                                     <TableColumn fx:id="vPlate" text="Rendszám" prefWidth="120"/>
-                                    <TableColumn fx:id="vMakeModel" text="Gyártmány / Típus" prefWidth="220"/>
+                                    <TableColumn fx:id="vVin" text="Alvázszám" prefWidth="220"/>
+                                    <TableColumn fx:id="vEngine_no" text="Motorszám" prefWidth="220"/>
+                                    <TableColumn fx:id="vBrand" text="Gyártmány" prefWidth="220"/>
+                                    <TableColumn fx:id="vModel" text="Típus" prefWidth="220"/>
+                                    <TableColumn fx:id="vYear" text="Évjárat" prefWidth="100"/>
+                                    <TableColumn fx:id="vOdometer" text="Km" prefWidth="100"/>
+                                    <TableColumn fx:id="vFuel_type" text="Üzemanyag" prefWidth="100"/>
                                     <TableColumn fx:id="vOwner" text="Ügyfél" prefWidth="220"/>
                                 </columns>
                             </TableView>

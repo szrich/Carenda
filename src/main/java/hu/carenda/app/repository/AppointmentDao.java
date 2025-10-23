@@ -18,15 +18,28 @@ public class AppointmentDao {
         a.setDurationMinutes(rs.getInt("duration"));
         a.setNote(rs.getString("note"));
         a.setStatus(rs.getString("status"));
+        try {
+            a.setOwnerName(rs.getString("customer_name")); // alias a SELECT-ből
+        } catch (Exception ignore) {
+        }
+        try {
+            a.setVehiclePlate(rs.getString("vehicle_plate")); // alias a SELECT-ből
+        } catch (Exception ignore) {
+        }
+
         return a;
+
     }
 
     public List<Appointment> findAll() {
         String sql = """
-            SELECT id, customer_id, vehicle_id, start_ts, duration, note, status
-              FROM appointments
-             ORDER BY start_ts DESC, id DESC
-            """;
+        SELECT a.id, a.customer_id, a.vehicle_id, a.start_ts, a.duration, a.note, a.status,
+               c.name AS customer_name, v.plate AS vehicle_plate
+          FROM appointments a
+          LEFT JOIN customers c ON c.id = a.customer_id
+          LEFT JOIN vehicles v ON v.id = a.vehicle_id
+         ORDER BY a.start_ts DESC, a.id DESC
+        """;
         try (var c = Database.get(); var st = c.createStatement(); var rs = st.executeQuery(sql)) {
             List<Appointment> out = new ArrayList<>();
             while (rs.next()) {
