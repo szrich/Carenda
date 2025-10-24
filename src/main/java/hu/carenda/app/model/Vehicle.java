@@ -10,14 +10,13 @@ public class Vehicle {
     private final StringProperty brand = new SimpleStringProperty();
     private final StringProperty model = new SimpleStringProperty();
     private final IntegerProperty year = new SimpleIntegerProperty();
-    private final ObjectProperty<Integer> odometer_km = new SimpleObjectProperty<>();
     private final StringProperty fuel_type = new SimpleStringProperty();
     private final IntegerProperty ownerId = new SimpleIntegerProperty();
     private final StringProperty ownerName = new SimpleStringProperty();
 
     public Vehicle() {}
-    public Vehicle(int id, String plate, String vin, String engine_no, String brand, String model, Integer year, Integer odometer_km, String fuel_type, int ownerId, String ownerName) {
-        setId(id); setPlate(plate); setVin(vin); setEngine_no(engine_no); setBrand(brand); setModel(model); setYear(year); setOdometer_km(odometer_km); setFuel_type(fuel_type);  setOwnerId(ownerId); setOwnerName(ownerName);
+    public Vehicle(int id, String plate, String vin, String engine_no, String brand, String model, Integer year, String fuel_type, int ownerId, String ownerName) {
+        setId(id); setPlate(plate); setVin(vin); setEngine_no(engine_no); setBrand(brand); setModel(model); setYear(year); setFuel_type(fuel_type);  setOwnerId(ownerId); setOwnerName(ownerName);
     }
 
     public int getId() { return id.get(); }
@@ -47,10 +46,6 @@ public class Vehicle {
     public Integer getYear() { return year.get(); }
     public void setYear(Integer v) { year.set(v); }
     public IntegerProperty yearProperty() { return year; }
-    
-    public Integer getOdometer_km() { return odometer_km.get(); }
-    public void setOdometer_km(Integer v) { odometer_km.set(v); }
-    public ObjectProperty<Integer> odometer_kmProperty() { return odometer_km; }
     
     public String getFuel_type() { return fuel_type.get(); }
     public void setFuel_type(String v) { fuel_type.set(v); }

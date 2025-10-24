@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 import hu.carenda.app.model.Appointment;
+import hu.carenda.app.model.ServiceJobCard;
 
 public class Forms {
 
@@ -31,7 +32,7 @@ public class Forms {
     public static Stage vehicle(Vehicle editing) {
         try {
             FXMLLoader f = new FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/vehicle-form.fxml"));
-            Parent root = (Parent) f.load(); // <-- FONTOS: cast Parent-re
+            Parent root = (Parent) f.load();
             VehicleFormController ctrl = f.getController();
             ctrl.setEditing(editing);
 
@@ -43,7 +44,37 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
+    private static Stage appointment(Appointment editing) {
+        try {
+            FXMLLoader f = new FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/appointment-form.fxml"));
+            Parent root = (Parent) f.load();
+            AppointmentFormController ctrl = f.getController();
+            ctrl.setEditing(editing);
 
+            Stage dlg = new Stage();
+            dlg.setTitle(editing == null ? "Új időpont" : "Időpont szerkesztése");
+            dlg.setScene(new Scene(root));
+            return dlg;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static Stage serviceJobCard(ServiceJobCard editing) {
+        try {
+            FXMLLoader f = new FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/serviceJobCard-form.fxml"));
+            Parent root = (Parent) f.load();
+            ServiceJobCardFormController ctrl = f.getController();
+            ctrl.setEditing(editing);
+
+            Stage dlg = new Stage();
+            dlg.setTitle(editing == null ? "Új munkalap" : "Munkalap szerkesztése");
+            dlg.setScene(new Scene(root));
+            return dlg;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    /*
     public static javafx.stage.Stage appointment(hu.carenda.app.model.Appointment editing) {
         try {
             var f = new javafx.fxml.FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/appointment-form.fxml"));
@@ -59,7 +90,7 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
-    
+    */
     public static boolean openAppointmentDialog(Appointment editing, Window owner) {
         javafx.stage.Stage dlg = appointment(editing); // <-- a meglévő gyárat újrahasznosítjuk
         if (owner != null) {

@@ -14,6 +14,9 @@ public class User {
     private Integer roleId;
     private String roleName;
 
+    // ÚJ: flag, hogy a felhasználónak kötelező-e jelszót cserélnie
+    private boolean mustChangePassword;
+
     public int getId() {
         return id;
     }
@@ -68,6 +71,16 @@ public class User {
         return this;
     }
 
+    // --- ÚJ mező: mustChangePassword ---
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public User setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "User{id=" + id +
@@ -75,7 +88,7 @@ public class User {
                 ", fullName='" + fullName + '\'' +
                 ", roleId=" + roleId +
                 ", roleName='" + roleName + '\'' +
+                ", mustChangePassword=" + mustChangePassword +
                 '}';
     }
 }
-

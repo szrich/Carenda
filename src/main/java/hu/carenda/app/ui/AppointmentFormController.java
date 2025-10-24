@@ -428,12 +428,12 @@ public class AppointmentFormController {
 
         if (v.getId() == 0) {
             // ÚJ jármű – FIGYELEM: a DAO szignója (plate, makeModel, customerId)
-            int newId = vehicleDao.insert(v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getOdometer_km(), v.getFuel_type(), customerId);
+            int newId = vehicleDao.insert(v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getFuel_type(), customerId);
             v.setId(newId);
             return newId;
         } else {
             // Meglévő jármű frissítése – szignó: (id, plate, makeModel, customerId)
-            vehicleDao.update(v.getId(), v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getOdometer_km(), v.getFuel_type(), customerId);
+            vehicleDao.update(v.getId(), v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getFuel_type(), customerId);
             return v.getId();
         }
     }

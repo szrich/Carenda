@@ -1,1 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="hu.carenda.app.ui.ServiceJobCardFormController">
+
+    <!-- Fejléc -->
+    <top>
+        <HBox spacing="12">
+            <padding>
+                <Insets top="12" right="16" bottom="12" left="16"/>
+            </padding>
+            <Label text="Munkalap" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Státusz:"/>
+            <ComboBox fx:id="status" prefWidth="160"/>
+            <Label text="Felelős:"/>
+            <ComboBox fx:id="assignee" prefWidth="160"/>
+        </HBox>
+    </top>
+
+    <!-- Görgethető központi tartalom -->
+    <center>
+        <ScrollPane fitToWidth="true" BorderPane.alignment="CENTER">
+            <content>
+                <VBox spacing="16">
+                    <padding>
+                        <Insets top="12" right="16" bottom="16" left="16"/>
+                    </padding>
+
+                    <!-- Alapadatok: Ügyfél + Jármű + Időpontok -->
+                    <TitledPane text="Alapadatok" collapsible="false">
+                        <content>
+                            <GridPane hgap="12" vgap="10">
+                                <padding>
+                                    <Insets top="12" right="12" bottom="12" left="12"/>
+                                </padding>
+                                <columnConstraints>
+                                    <ColumnConstraints halignment="RIGHT" percentWidth="18"/>
+                                    <ColumnConstraints percentWidth="32" hgrow="ALWAYS"/>
+                                    <ColumnConstraints halignment="RIGHT" percentWidth="18"/>
+                                    <ColumnConstraints percentWidth="32" hgrow="ALWAYS"/>
+                                </columnConstraints>
+
+                                <!-- Sor 0 -->
+                                <Label text="Munkalap #" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="jobcardNo" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                <Label text="Felvétel ideje" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                                <DatePicker fx:id="createdAt" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 1 -->
+                                <Label text="Ügyfél neve" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="customerName" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                                <Label text="Telefon" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                                <TextField fx:id="phone" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 2 -->
+                                <Label text="E-mail" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextField fx:id="email" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                                <Label text="Számlázási cím" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                                <TextField fx:id="billingAddress" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 3 -->
+                                <Label text="Rendszám" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <TextField fx:id="plate" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                                <Label text="VIN" GridPane.rowIndex="3" GridPane.columnIndex="2"/>
+                                <TextField fx:id="vin" GridPane.rowIndex="3" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 4 -->
+                                <Label text="Gyártmány" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                <TextField fx:id="brand" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                                <Label text="Típus" GridPane.rowIndex="4" GridPane.columnIndex="2"/>
+                                <TextField fx:id="model" GridPane.rowIndex="4" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 5 -->
+                                <Label text="Évjárat" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                <TextField fx:id="year" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                                <Label text="Km-óra (km)" GridPane.rowIndex="5" GridPane.columnIndex="2"/>
+                                <TextField fx:id="odometerKm" GridPane.rowIndex="5" GridPane.columnIndex="3"/>
+
+                                <!-- Sor 6 -->
+                                <Label text="Érkezés ideje" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                <DatePicker fx:id="arrivalDate" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                                <Label text="Várható kész" GridPane.rowIndex="6" GridPane.columnIndex="2"/>
+                                <DatePicker fx:id="dueDate" GridPane.rowIndex="6" GridPane.columnIndex="3"/>
+                            </GridPane>
+                        </content>
+                    </TitledPane>
+
+                    <!-- Hiba / Javítás / Megjegyzések középre igazítva -->
+                    <TitledPane text="Hiba és megállapítások" collapsible="false">
+                        <content>
+                            <GridPane hgap="12" vgap="10">
+                                <padding>
+                                    <Insets top="12" right="12" bottom="12" left="12"/>
+                                </padding>
+                                <columnConstraints>
+                                    <ColumnConstraints halignment="RIGHT" percentWidth="20"/>
+                                    <ColumnConstraints percentWidth="80" hgrow="ALWAYS"/>
+                                </columnConstraints>
+
+                                <Label text="Hiba leírása" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextArea fx:id="faultDesc" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                                          prefRowCount="3" wrapText="true" GridPane.hgrow="ALWAYS"/>
+
+                                <Label text="Javítás leírása" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextArea fx:id="repairNote" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                                          prefRowCount="3" wrapText="true" GridPane.hgrow="ALWAYS"/>
+
+                                <Label text="Megállapítás" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextArea fx:id="diagnosis" GridPane.rowIndex="2" GridPane.columnIndex="1"
+                                          prefRowCount="3" wrapText="true" GridPane.hgrow="ALWAYS"/>
+
+                                <Label text="Megjegyzés (belső)" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <TextArea fx:id="internalNote" GridPane.rowIndex="3" GridPane.columnIndex="1"
+                                          prefRowCount="2" wrapText="true" GridPane.hgrow="ALWAYS"/>
+                            </GridPane>
+                        </content>
+                    </TitledPane>
+
+                    <!-- Tétellisták: Munkaidő és Alkatrészek egymás mellett -->
+                    <HBox spacing="16">
+                        <VBox spacing="8" VBox.vgrow="ALWAYS">
+                            <Label text="Elvégzett munka (labor)"/>
+                            <TableView fx:id="laborTable" prefHeight="240" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colLaborName" text="Munka" prefWidth="180">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="name"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colLaborHours" text="Óra" prefWidth="70">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="hours"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colLaborRate" text="Egységár" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="rate"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colLaborVat" text="ÁFA %" prefWidth="70">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="vat"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colLaborNet" text="Nettó" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="net"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colLaborGross" text="Bruttó" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="gross"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                </columns>
+                            </TableView>
+                            <HBox spacing="8">
+                                <Button fx:id="btnAddLabor" text="Hozzáadás"/>
+                                <Button fx:id="btnEditLabor" text="Szerkesztés"/>
+                                <Button fx:id="btnRemoveLabor" text="Eltávolítás"/>
+                            </HBox>
+                        </VBox>
+
+                        <VBox spacing="8" VBox.vgrow="ALWAYS">
+                            <Label text="Felhasznált anyagok / alkatrészek"/>
+                            <TableView fx:id="partsTable" prefHeight="240" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colPartSku" text="Cikkszám" prefWidth="120">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="sku"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartName" text="Megnevezés" prefWidth="180">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="name"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartQty" text="Menny." prefWidth="70">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="quantity"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartUnitPrice" text="Egységár" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="unitPrice"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartVat" text="ÁFA %" prefWidth="70">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="vat"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartNet" text="Nettó" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="net"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                    <TableColumn fx:id="colPartGross" text="Bruttó" prefWidth="90">
+                                        <cellValueFactory>
+                                            <PropertyValueFactory property="gross"/>
+                                        </cellValueFactory>
+                                    </TableColumn>
+                                </columns>
+                            </TableView>
+                            <HBox spacing="8">
+                                <Button fx:id="btnAddPart" text="Hozzáadás"/>
+                                <Button fx:id="btnEditPart" text="Szerkesztés"/>
+                                <Button fx:id="btnRemovePart" text="Eltávolítás"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Összesítő sáv -->
+                    <TitledPane text="Pénzügyi összesítő" collapsible="false">
+                        <content>
+                            <GridPane hgap="12" vgap="8">
+                                <padding>
+                                    <Insets top="10" right="12" bottom="10" left="12"/>
+                                </padding>
+                                <columnConstraints>
+                                    <ColumnConstraints halignment="RIGHT" percentWidth="70"/>
+                                    <ColumnConstraints percentWidth="30"/>
+                                </columnConstraints>
+
+                                <Label text="Részösszeg (nettó):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="subtotalNet" GridPane.rowIndex="0" GridPane.columnIndex="1" editable="false"/>
+
+                                <Label text="ÁFA összege:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="vatAmount" GridPane.rowIndex="1" GridPane.columnIndex="1" editable="false"/>
+
+                                <Label text="Végösszeg (bruttó):" style="-fx-font-weight: bold;"
+                                       GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextField fx:id="totalGross" style="-fx-font-weight: bold;"
+                                           GridPane.rowIndex="2" GridPane.columnIndex="1" editable="false"/>
+
+                                <Label text="Előleg:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <TextField fx:id="advance" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                                <Label text="Fizetendő:" style="-fx-font-weight: bold;"
+                                       GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                <TextField fx:id="amountDue" style="-fx-font-weight: bold;"
+                                           GridPane.rowIndex="4" GridPane.columnIndex="1" editable="false"/>
+                            </GridPane>
+                        </content>
+                    </TitledPane>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+    <!-- Alsó gombsor -->
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <padding>
+                <Insets top="8" right="16" bottom="12" left="16"/>
+            </padding>
+            <CheckBox fx:id="termsAccepted" text="Feltételek elfogadása"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnCancel" text="Mégse"/>
+            <Button fx:id="btnSave" text="Mentés" defaultButton="true"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

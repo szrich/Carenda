@@ -14,13 +14,16 @@ hu/carenda/app/db/Database.class
 hu/carenda/app/ui/AppointmentFormController$4.class
 hu/carenda/app/ui/VehicleFormController.class
 hu/carenda/app/ui/LoginController.class
+hu/carenda/app/ui/ChangePasswordController.class
 hu/carenda/app/repository/UserDao.class
 hu/carenda/app/repository/VehicleDao.class
 hu/carenda/app/ui/AppointmentFormController$6.class
 hu/carenda/app/repository/CustomerDao.class
 hu/carenda/app/ui/AppointmentFormController$1.class
 hu/carenda/app/repository/AppointmentDao.class
+hu/carenda/app/ui/ServiceJobCardFormController.class
 hu/carenda/app/model/ServiceJobCard.class
+hu/carenda/app/ui/UsersAdminController.class
 hu/carenda/app/model/Customer.class
 hu/carenda/app/ui/AppointmentFormController$3.class
 hu/carenda/app/service/AuthService.class

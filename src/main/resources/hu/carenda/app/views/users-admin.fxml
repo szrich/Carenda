@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="hu.carenda.app.ui.UsersAdminController"
+      spacing="10"
+      prefWidth="500"
+      prefHeight="400"
+      style="-fx-padding: 10;">
+
+    <children>
+
+        <Label text="Felhasználók" style="-fx-font-weight: bold;"/>
+
+        <TableView fx:id="usersTable" prefHeight="200">
+            <columns>
+                <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                <TableColumn fx:id="colUsername" text="Felhasználónév" prefWidth="150"/>
+                <TableColumn fx:id="colFullName" text="Név" prefWidth="150"/>
+                <TableColumn fx:id="colRole" text="Szerep" prefWidth="100"/>
+            </columns>
+        </TableView>
+
+        <TitledPane text="Új felhasználó hozzáadása" expanded="true">
+            <content>
+                <GridPane hgap="10" vgap="8" style="-fx-padding: 10;">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="130" halignment="RIGHT"/>
+                        <ColumnConstraints minWidth="200" hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <children>
+                        <Label text="Felhasználónév:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="newUsernameField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                        <Label text="Teljes név:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="newFullNameField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                        <Label text="Szerep (pl. ADMIN / USER):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="newRoleField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                        <Label text="Ideiglenes jelszó:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <PasswordField fx:id="newTempPasswordField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                        <Button text="Hozzáadás"
+                                onAction="#onAddUser"
+                                GridPane.rowIndex="4" GridPane.columnIndex="1"
+                                GridPane.halignment="RIGHT"/>
+                    </children>
+                </GridPane>
+            </content>
+        </TitledPane>
+
+        <HBox spacing="10">
+            <children>
+                <Button text="Jelszó visszaállítása..." onAction="#onResetPassword"/>
+                <Button text="Kijelölt törlése" onAction="#onDeleteUser"/>
+            </children>
+        </HBox>
+
+        <Label fx:id="statusLabel" textFill="red"/>
+
+    </children>
+
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+</VBox>
+

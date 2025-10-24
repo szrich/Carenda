@@ -30,8 +30,6 @@ public class VehicleFormController {
     @FXML
     private ComboBox<Integer> yearPicker;
     @FXML
-    private TextField odometer_km;
-    @FXML
     private ComboBox<String> fuel_type;
     @FXML
     private ComboBox<Customer> ownerCombo;
@@ -66,6 +64,7 @@ public class VehicleFormController {
             }
         });
 
+        /*
         // csak számok engedélyezése
         odometer_km.setTextFormatter(new TextFormatter<>(change -> {
             if (change.getText().matches("[0-9]*")) {
@@ -73,7 +72,7 @@ public class VehicleFormController {
             }
             return null; // egyébként tiltjuk a bevitelt
         }));
-
+        */
         fuel_type.setItems(FXCollections.observableArrayList("BENZIN", "DÍZEL", "HIBRID", "ELEKTROMOS"));
         fuel_type.getSelectionModel().select("BENZIN");
 
@@ -109,8 +108,6 @@ public class VehicleFormController {
             } else {
                 yearPicker.getSelectionModel().clearSelection();
             }
-            odometer_km.setText(v.getOdometer_km() == null ? "" : String.valueOf(v.getOdometer_km()));
-
             fuel_type.setValue(v.getFuel_type());
             // tulaj beállítása
             if (v.getOwnerId() > 0) {
@@ -133,11 +130,6 @@ public class VehicleFormController {
         String br = brand.getText().trim();
         String md = model.getText().trim();
         Integer yp = yearPicker.getValue();
-        String text = odometer_km.getText();
-        Integer okm = null;
-        if (!text.isBlank()) {
-            okm = Integer.parseInt(text);
-        }
         String ft = fuel_type.getValue();
         Customer ow = ownerCombo.getValue();
 
@@ -166,9 +158,9 @@ public class VehicleFormController {
 
         // --- MENTÉS ---
         if (editing == null) {
-            vehicleDao.insert(pl, vn, en, br, md, yp, okm, ft, ow.getId());
+            vehicleDao.insert(pl, vn, en, br, md, yp, ft, ow.getId());
         } else {
-            vehicleDao.update(editing.getId(), pl, vn, en, br, md, yp, okm, ft, ow.getId());
+            vehicleDao.update(editing.getId(), pl, vn, en, br, md, yp, ft, ow.getId());
         }
 
         // --- BEZÁRÁS ---
