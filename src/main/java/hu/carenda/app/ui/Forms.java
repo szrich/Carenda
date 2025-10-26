@@ -44,6 +44,7 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
+
     private static Stage appointment(Appointment editing) {
         try {
             FXMLLoader f = new FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/appointment-form.fxml"));
@@ -59,6 +60,7 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
+
     public static Stage serviceJobCard(ServiceJobCard editing) {
         try {
             FXMLLoader f = new FXMLLoader(Forms.class.getResource("/hu/carenda/app/views/serviceJobCard-form.fxml"));
@@ -74,6 +76,35 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
+
+    public static Stage serviceJobCard(ServiceJobCard card,
+            Customer cust,
+            Vehicle veh) {
+        try {
+            FXMLLoader f = new FXMLLoader(
+                    Forms.class.getResource("/hu/carenda/app/views/serviceJobCard-form.fxml")
+            );
+            Parent root = f.load();
+
+            ServiceJobCardFormController ctrl = f.getController();
+
+            // NEM setEditing(..), hanem a bővített változat:
+            ctrl.setContext(card, cust, veh);
+
+            Stage dlg = new Stage();
+            boolean isNew = (card == null
+                    || card.getId() == null
+                    || card.getId() == 0);
+
+            dlg.setTitle(isNew ? "Új munkalap" : "Munkalap szerkesztése");
+            dlg.setScene(new Scene(root));
+            return dlg;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /*
     public static javafx.stage.Stage appointment(hu.carenda.app.model.Appointment editing) {
         try {
@@ -90,7 +121,7 @@ public class Forms {
             throw new RuntimeException(e);
         }
     }
-    */
+     */
     public static boolean openAppointmentDialog(Appointment editing, Window owner) {
         javafx.stage.Stage dlg = appointment(editing); // <-- a meglévő gyárat újrahasznosítjuk
         if (owner != null) {
@@ -100,6 +131,5 @@ public class Forms {
         dlg.showAndWait();
         return Boolean.TRUE.equals(dlg.getUserData()); // lásd: controller-ben állítjuk be Mentéskor
     }
-    
 
 }

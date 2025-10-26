@@ -51,7 +51,12 @@
                                 <Label text="Munkalap #" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                                 <TextField fx:id="jobcardNo" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
                                 <Label text="Felvétel ideje" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                                <DatePicker fx:id="createdAt" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                                <HBox spacing="8" GridPane.rowIndex="0" GridPane.columnIndex="3">
+                                    <DatePicker fx:id="createdAt"/>
+                                    <Spinner fx:id="createdHourSpinner" prefWidth="80"/>
+                                    <Label text=":"/>
+                                    <Spinner fx:id="createdMinuteSpinner" prefWidth="80"/>
+                                </HBox>
 
                                 <!-- Sor 1 -->
                                 <Label text="Ügyfél neve" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
@@ -62,8 +67,6 @@
                                 <!-- Sor 2 -->
                                 <Label text="E-mail" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                                 <TextField fx:id="email" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                                <Label text="Számlázási cím" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
-                                <TextField fx:id="billingAddress" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
 
                                 <!-- Sor 3 -->
                                 <Label text="Rendszám" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
@@ -84,10 +87,20 @@
                                 <TextField fx:id="odometerKm" GridPane.rowIndex="5" GridPane.columnIndex="3"/>
 
                                 <!-- Sor 6 -->
-                                <Label text="Érkezés ideje" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                                <DatePicker fx:id="arrivalDate" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                                <Label text="Módosítás ideje" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                <HBox spacing="8" GridPane.rowIndex="6" GridPane.columnIndex="1">
+                                    <DatePicker fx:id="modificationDate"/>
+                                    <Spinner fx:id="modificationHourSpinner" prefWidth="80"/>
+                                    <Label text=":"/>
+                                    <Spinner fx:id="modificationMinuteSpinner" prefWidth="80"/>
+                                </HBox>
                                 <Label text="Várható kész" GridPane.rowIndex="6" GridPane.columnIndex="2"/>
-                                <DatePicker fx:id="dueDate" GridPane.rowIndex="6" GridPane.columnIndex="3"/>
+                                <HBox spacing="8" GridPane.rowIndex="6" GridPane.columnIndex="3">
+                                    <DatePicker fx:id="dueDate"/>
+                                    <Spinner fx:id="dueHourSpinner" prefWidth="80"/>
+                                    <Label text=":"/>
+                                    <Spinner fx:id="dueMinuteSpinner" prefWidth="80"/>
+                                </HBox>
                             </GridPane>
                         </content>
                     </TitledPane>
@@ -126,35 +139,35 @@
                     <!-- Tétellisták: Munkaidő és Alkatrészek egymás mellett -->
                     <HBox spacing="16">
                         <VBox spacing="8" VBox.vgrow="ALWAYS">
-                            <Label text="Elvégzett munka (labor)"/>
-                            <TableView fx:id="laborTable" prefHeight="240" VBox.vgrow="ALWAYS">
+                            <Label text="Elvégzett munka"/>
+                            <TableView fx:id="workdescTable" prefHeight="240" VBox.vgrow="ALWAYS">
                                 <columns>
-                                    <TableColumn fx:id="colLaborName" text="Munka" prefWidth="180">
+                                    <TableColumn fx:id="colWorkdescName" text="Munka" prefWidth="180">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="name"/>
                                         </cellValueFactory>
                                     </TableColumn>
-                                    <TableColumn fx:id="colLaborHours" text="Óra" prefWidth="70">
+                                    <TableColumn fx:id="colWorkdescHours" text="Óra" prefWidth="70">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="hours"/>
                                         </cellValueFactory>
                                     </TableColumn>
-                                    <TableColumn fx:id="colLaborRate" text="Egységár" prefWidth="90">
+                                    <TableColumn fx:id="colWorkdescRate" text="Egységár" prefWidth="90">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="rate"/>
                                         </cellValueFactory>
                                     </TableColumn>
-                                    <TableColumn fx:id="colLaborVat" text="ÁFA %" prefWidth="70">
+                                    <TableColumn fx:id="colWorkdescVat" text="ÁFA %" prefWidth="70">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="vat"/>
                                         </cellValueFactory>
                                     </TableColumn>
-                                    <TableColumn fx:id="colLaborNet" text="Nettó" prefWidth="90">
+                                    <TableColumn fx:id="colWorkdescNet" text="Nettó" prefWidth="90">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="net"/>
                                         </cellValueFactory>
                                     </TableColumn>
-                                    <TableColumn fx:id="colLaborGross" text="Bruttó" prefWidth="90">
+                                    <TableColumn fx:id="colWorkdescGross" text="Bruttó" prefWidth="90">
                                         <cellValueFactory>
                                             <PropertyValueFactory property="gross"/>
                                         </cellValueFactory>
@@ -162,9 +175,9 @@
                                 </columns>
                             </TableView>
                             <HBox spacing="8">
-                                <Button fx:id="btnAddLabor" text="Hozzáadás"/>
-                                <Button fx:id="btnEditLabor" text="Szerkesztés"/>
-                                <Button fx:id="btnRemoveLabor" text="Eltávolítás"/>
+                                <Button fx:id="btnAddWorkdesc" text="Hozzáadás"/>
+                                <Button fx:id="btnEditWorkdesc" text="Szerkesztés"/>
+                                <Button fx:id="btnRemoveWorkdesc" text="Eltávolítás"/>
                             </HBox>
                         </VBox>
 
@@ -264,6 +277,8 @@
             </padding>
             <CheckBox fx:id="termsAccepted" text="Feltételek elfogadása"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnPrint" text="Nyomtatás"/>
+            <Button fx:id="btnPdf" text="PDF mentés"/>
             <Button fx:id="btnCancel" text="Mégse"/>
             <Button fx:id="btnSave" text="Mentés" defaultButton="true"/>
         </HBox>

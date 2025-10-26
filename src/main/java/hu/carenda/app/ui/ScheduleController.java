@@ -60,6 +60,11 @@ public class ScheduleController {
         reload();
     }
 
+    public void hardRefreshSchedule() {
+        // csak annyit csinál, hogy újratölt mindent az aktuális nap / heti nézet szerint
+        reload();
+    }
+
     @FXML
     public void onNew() {
         var start = dayPicker.getValue().atTime(10, 0);
@@ -120,7 +125,12 @@ public class ScheduleController {
         // --- RÁCSVONALAK ---
         addHourLines(canvas.getPrefWidth());
 
-        for (var a : appts) {
+        // rendezzük és oszlopozzuk
+        var placedList = layoutDayAppointments(appts);
+
+        for (var placed : placedList) {
+            var a = placed.appt;
+
             var start = LocalDateTime.parse(a.getStartTs());
             double minutesFromStart = java.time.Duration
                     .between(day.atTime(DAY_START_HOUR, 0), start).toMinutes();
@@ -128,7 +138,12 @@ public class ScheduleController {
             double y = Math.max(0, minutesFromStart * (HOUR_PIXELS / 60.0));
             double h = Math.max(22, a.getDurationMinutes() * (HOUR_PIXELS / 60.0));
 
-            var block = makeBlock(a, 0, y, 680, h);
+            // szélesség felezés, ha kell
+            double fullWidth = 680; // eddig fixen ezt adtad
+            double w = fullWidth / placed.totalCols;
+            double x = placed.columnIndex * w;
+
+            var block = makeBlock(a, x, y, w - 4, h); // egy kis -4, hogy ne érjen teljesen össze
             canvas.getChildren().add(block);
         }
     }
@@ -148,7 +163,7 @@ public class ScheduleController {
         addHourLines(totalWidth);     // vízszintes vonalak (órák)
         addDaySeparators(totalWidth); // függőleges napelválasztók
 
-        // oszlop-fejlécek
+        // oszlop-fejlécek (H, K, Sz...)
         for (int d = 0; d < 7; d++) {
             var head = new Label(monday.plusDays(d).getDayOfWeek().toString().substring(0, 3));
             head.setStyle("-fx-font-weight: bold;");
@@ -157,24 +172,49 @@ public class ScheduleController {
             canvas.getChildren().add(head);
         }
 
-        // időpont blokkok
+        // 1) napokra bontjuk az appt-okat
+        // pl. dayIndex -> List<Appointment>
+        List<List<Appointment>> perDay = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            perDay.add(new ArrayList<>());
+        }
+
         for (var a : appts) {
             var start = LocalDateTime.parse(a.getStartTs());
             int dayIndex = (int) java.time.temporal.ChronoUnit.DAYS.between(monday, start.toLocalDate());
             if (dayIndex < 0 || dayIndex > 6) {
                 continue;
             }
+            perDay.get(dayIndex).add(a);
+        }
 
-            double minutesFromStart = java.time.Duration
-                    .between(start.toLocalDate().atTime(DAY_START_HOUR, 0), start).toMinutes();
+        // 2) minden naphoz lefuttatjuk a layoutot, és kirajzoljuk
+        for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
+            var dayList = perDay.get(dayIndex);
 
-            double x = dayIndex * COL_WIDTH + 4;
-            double y = Math.max(0, minutesFromStart * (HOUR_PIXELS / 60.0));
-            double w = COL_WIDTH - 8;
-            double h = Math.max(22, a.getDurationMinutes() * (HOUR_PIXELS / 60.0));
+            var placedList = layoutDayAppointments(dayList);
 
-            var block = makeBlock(a, x, y, w, h);
-            canvas.getChildren().add(block);
+            for (var placed : placedList) {
+                var a = placed.appt;
+                var start = LocalDateTime.parse(a.getStartTs());
+
+                double minutesFromStart = java.time.Duration
+                        .between(start.toLocalDate().atTime(DAY_START_HOUR, 0), start)
+                        .toMinutes();
+
+                // napi oszlop bal oldala
+                double baseX = dayIndex * COL_WIDTH + 4;
+                double y = Math.max(0, minutesFromStart * (HOUR_PIXELS / 60.0));
+                double h = Math.max(22, a.getDurationMinutes() * (HOUR_PIXELS / 60.0));
+
+                // oszlopleosztás azon a napon belül
+                double fullWidth = COL_WIDTH - 8;    // eddigi w
+                double w = fullWidth / placed.totalCols;
+                double x = baseX + placed.columnIndex * w;
+
+                var block = makeBlock(a, x, y, w - 4, h);
+                canvas.getChildren().add(block);
+            }
         }
     }
 
@@ -254,6 +294,75 @@ public class ScheduleController {
         line.setStroke(javafx.scene.paint.Color.GRAY);
         // Ha szaggatottat szeretnél:
         // line.getStrokeDashArray().setAll(4.0, 4.0);
+    }
+
+    private static class PlacedAppt {
+
+        Appointment appt;
+        int columnIndex;   // 0 vagy 1
+        int totalCols;     // 1 vagy 2 az adott "overlap-csoportban"
+    }
+
+    /**
+     * Egy adott nap időpontjait (ugyanabban az oszlopban / napon) széthasítja
+     * max 2 oszlopra.
+     *
+     * Feltételezzük, hogy nincs 3+ átfedés, mert azt már az üzleti logika
+     * tiltja.
+     */
+    private List<PlacedAppt> layoutDayAppointments(List<Appointment> apptsForThatDay) {
+        // Rendezzük kezdési idő szerint, hogy determinisztikus legyen
+        apptsForThatDay.sort((a, b) -> {
+            var sa = LocalDateTime.parse(a.getStartTs());
+            var sb = LocalDateTime.parse(b.getStartTs());
+            return sa.compareTo(sb);
+        });
+
+        List<PlacedAppt> placed = new ArrayList<>();
+
+        for (Appointment current : apptsForThatDay) {
+            LocalDateTime curStart = LocalDateTime.parse(current.getStartTs());
+            LocalDateTime curEnd = curStart.plusMinutes(current.getDurationMinutes());
+
+            // nézzük meg, ütközik-e már lerakottal
+            PlacedAppt conflict = null;
+            for (PlacedAppt p : placed) {
+                LocalDateTime pStart = LocalDateTime.parse(p.appt.getStartTs());
+                LocalDateTime pEnd = pStart.plusMinutes(p.appt.getDurationMinutes());
+
+                boolean overlap = pStart.isBefore(curEnd) && pEnd.isAfter(curStart);
+                if (overlap) {
+                    conflict = p;
+                    break;
+                }
+            }
+
+            PlacedAppt mine = new PlacedAppt();
+            mine.appt = current;
+
+            if (conflict == null) {
+                // nincs ütközés → egyedül van
+                mine.columnIndex = 0;
+                mine.totalCols = 1;
+            } else {
+                // van ütközés → ketten egymás mellett
+                // Konfliktusban lévő biztosan columnIndex = 0 vagy 1
+                // Akkor én kapom a másikat.
+                if (conflict.columnIndex == 0) {
+                    mine.columnIndex = 1;
+                } else {
+                    mine.columnIndex = 0;
+                }
+                // mindkettő totalCols = 2
+                conflict.totalCols = 2;
+                mine.totalCols = 2;
+            }
+
+            placed.add(mine);
+        }
+
+        // Még egy biztonsági kör: ha valaki totalCols=1 maradt, az rendben.
+        return placed;
     }
 
 }

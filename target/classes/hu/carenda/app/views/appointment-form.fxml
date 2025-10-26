@@ -64,6 +64,7 @@
             <padding>
                 <Insets top="0" right="16" bottom="16" left="16"/>
             </padding>
+            <Button text="Munkalap" onAction="#onJobCard"/>
             <Button text="Mégse" onAction="#onCancel"/>
             <Button fx:id="saveBtn" text="Mentés" onAction="#onSave" defaultButton="true"/>
         </HBox>

@@ -17,9 +17,9 @@
     <center>
         <TabPane fx:id="tabPane">
             <tabs>
-                <Tab text="Naptár" closable="false">
+                <Tab fx:id="scheduleTab" text="Naptár" closable="false">
                     <content>
-                        <fx:include source="schedule.fxml"/>
+                        <fx:include source="schedule.fxml" fx:id="scheduleRoot"/>
                     </content>
                 </Tab>
                 
@@ -121,14 +121,20 @@
                                 </padding>
                                 <TextField fx:id="jobCardSearch" promptText="Keresés ügyfél / rendszám / megjegyzés" HBox.hgrow="ALWAYS"/>
                                 <Button text="Keres" onAction="#onJobCardSearch"/>
-                                <Button text="Új" onAction="#onJobCardNew"/>
                                 <Button text="Szerkeszt" onAction="#onJobCardEdit"/>
                             </HBox>
                         </top>
                         <center>
                             <TableView fx:id="jobCardTable">
                                 <columns>
-                                    <TableColumn fx:id="jJobCard" text="Rendszám" prefWidth="120"/>
+                                    <TableColumn fx:id="sId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="sJobcardNo" text="Munkaszám" prefWidth="160"/>
+                                    <TableColumn fx:id="sCreatedAt" text="Felvétel ideje" prefWidth="80"/>
+                                    <TableColumn fx:id="sPlate" text="Rendszám" prefWidth="220"/>
+                                    <TableColumn fx:id="sBrand" text="Márka" prefWidth="220"/>
+                                    <TableColumn fx:id="sModel" text="Típus" prefWidth="220"/>
+                                    <TableColumn fx:id="sCustomer" text="Ügyfél" prefWidth="120"/>
+                                    <TableColumn fx:id="sStatus" text="Státusz" prefWidth="120"/>
                                 </columns>
                             </TableView>
                         </center>

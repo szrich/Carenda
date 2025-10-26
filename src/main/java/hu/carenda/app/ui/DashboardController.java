@@ -16,11 +16,13 @@ import hu.carenda.app.model.Appointment;
 import hu.carenda.app.model.ServiceJobCard;
 import hu.carenda.app.model.User;
 import hu.carenda.app.repository.AppointmentDao;
+import hu.carenda.app.repository.ServiceJobCardDao;
 import java.util.Objects;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 
 public class DashboardController {
 
@@ -28,7 +30,19 @@ public class DashboardController {
     private User currentUser;
 
     @FXML
+    private Tab customersTab, vehiclesTab, appointmentsTab, jobcardsTab;
+
+    @FXML
     private Label headerLabel;
+
+    @FXML
+    private Tab scheduleTab;  // hogy tudjuk azonosítani a tabot tabPane listenerben
+
+    @FXML
+    private BorderPane scheduleRoot; // ez a schedule.fxml root node-ja
+
+    @FXML
+    private ScheduleController scheduleRootController; // ez maga a ScheduleController példány
 
     @FXML
     private Button usersButton; // "Felhasználók" gomb (csak adminnak látszódik)
@@ -43,7 +57,7 @@ public class DashboardController {
     private TableColumn<hu.carenda.app.model.Appointment, String> aWhen, aCustomer, aVehicle, aStatus, aNote;
 
     @FXML
-    private TextField customerSearch, vehicleSearch;
+    private TextField customerSearch, vehicleSearch, jobCardSearch;
     @FXML
     private TableView<Customer> customerTable;
     @FXML
@@ -59,7 +73,13 @@ public class DashboardController {
     private TableColumn<Vehicle, String> vPlate, vVin, vEngine_no, vBrand, vModel, vFuel_type, vOwner;
 
     @FXML
-    private TableView<Vehicle> jobCardTable;
+    private TableColumn<ServiceJobCard, Number> sId;
+
+    @FXML
+    private TableColumn<ServiceJobCard, String> sJobcardNo, sCreatedAt, sPlate, sBrand, sModel, sCustomer, sStatus;
+
+    @FXML
+    private TableView<ServiceJobCard> jobCardTable;
 
     @FXML
     private TabPane tabPane;
@@ -69,8 +89,10 @@ public class DashboardController {
     private final javafx.collections.ObservableList<hu.carenda.app.model.Appointment> appointments = javafx.collections.FXCollections.observableArrayList();
     private final CustomerDao customerDao = new CustomerDao();
     private final VehicleDao vehicleDao = new VehicleDao();
+    private final ServiceJobCardDao sjcDao = new ServiceJobCardDao();
     private final ObservableList<Customer> customers = FXCollections.observableArrayList();
     private final ObservableList<Vehicle> vehicles = FXCollections.observableArrayList();
+    private final ObservableList<ServiceJobCard> serviceJobCards = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -106,8 +128,6 @@ public class DashboardController {
         refreshCustomers();
         refreshVehicles();
         System.out.println("[DBG] DashboardController initialized");
-        customerSearch.setOnAction(e -> onCustomerSearch());
-        vehicleSearch.setOnAction(e -> onVehicleSearch());
 
         // Időpontok oszlopok
         aId.setCellValueFactory(d -> d.getValue().idProperty());
@@ -119,12 +139,73 @@ public class DashboardController {
         aNote.setCellValueFactory(d -> d.getValue().noteProperty());
         apptTable.setItems(appointments);
 
+        // Munkalap oszlopok
+        refreshJobCards();
+        sId.setCellValueFactory(d -> d.getValue().idProperty());
+        sJobcardNo.setCellValueFactory(d -> d.getValue().jobcard_noProperty());
+        sCreatedAt.setCellValueFactory(d -> d.getValue().created_atProperty());
+        sPlate.setCellValueFactory(d -> d.getValue().plateProperty());
+        sBrand.setCellValueFactory(d -> d.getValue().brandProperty());
+        sModel.setCellValueFactory(d -> d.getValue().modelProperty());
+        sCustomer.setCellValueFactory(d -> d.getValue().ownerNameProperty());
+        sStatus.setCellValueFactory(d -> d.getValue().statusProperty());
+        jobCardTable.setItems(serviceJobCards);
+
         // Keresés Enterrel
+        customerSearch.setOnAction(e -> onCustomerSearch());
+        vehicleSearch.setOnAction(e -> onVehicleSearch());
         apptSearch.setOnAction(e -> onApptSearch());
+        jobCardSearch.setOnAction(e -> onJobCardSearch());
 
         // Kezdeti töltés
         refreshAppointments();
 
+        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab == null) {
+                return;
+            }
+            // Mindent újratöltünk friss DB-adattal
+            hardRefreshAll();
+            // ha épp a naptár tabra léptünk, frissítsük a naptárt is
+            if (newTab == scheduleTab && scheduleRootController != null) {
+                scheduleRootController.hardRefreshSchedule();
+            }
+        });
+
+    }
+
+    private void hardRefreshAll() {
+        // ÜGYFELEK
+        String custQ = (customerSearch.getText() == null) ? "" : customerSearch.getText().trim();
+        if (custQ.isEmpty()) {
+            refreshCustomers();
+        } else {
+            customers.setAll(customerDao.search(custQ));
+        }
+
+        // JÁRMŰVEK
+        String vehQ = (vehicleSearch.getText() == null) ? "" : vehicleSearch.getText().trim();
+        if (vehQ.isEmpty()) {
+            refreshVehicles();
+        } else {
+            vehicles.setAll(vehicleDao.searchWithOwner(vehQ));
+        }
+
+        // IDŐPONTOK
+        String apptQ = (apptSearch.getText() == null) ? "" : apptSearch.getText().trim();
+        if (apptQ.isEmpty()) {
+            refreshAppointments();
+        } else {
+            appointments.setAll(apptDao.search(apptQ));
+        }
+
+        // MUNKALAPOK
+        String sjcQ = (jobCardSearch.getText() == null) ? "" : jobCardSearch.getText().trim();
+        if (sjcQ.isEmpty()) {
+            refreshJobCards();
+        } else {
+            serviceJobCards.setAll(sjcDao.searchWithOwnerAndVehicleData(sjcQ));
+        }
     }
 
     public void setCurrentUser(User u) {
@@ -166,10 +247,10 @@ public class DashboardController {
 
         try {
             FXMLLoader fxml = new FXMLLoader(
-                Objects.requireNonNull(
-                    getClass().getResource("/hu/carenda/app/views/users-admin.fxml"),
-                    "Nem található: /hu/carenda/app/views/users-admin.fxml"
-                )
+                    Objects.requireNonNull(
+                            getClass().getResource("/hu/carenda/app/views/users-admin.fxml"),
+                            "Nem található: /hu/carenda/app/views/users-admin.fxml"
+                    )
             );
             Parent root = fxml.load();
 
@@ -196,6 +277,10 @@ public class DashboardController {
 
     private void refreshVehicles() {
         vehicles.setAll(vehicleDao.findAllWithOwner());
+    }
+
+    private void refreshJobCards() {
+        serviceJobCards.setAll(sjcDao.findAllWithOwnerAndVehicleData());
     }
 
     // ---- ÜGYFELEK ----
@@ -366,16 +451,51 @@ public class DashboardController {
     // ---- MUNKALAPOK ----
     @FXML
     public void onJobCardSearch() {
+        String q = jobCardSearch.getText().trim();
+        serviceJobCards.setAll(q.isEmpty() ? sjcDao.findAllWithOwnerAndVehicleData() : sjcDao.searchWithOwnerAndVehicleData(q));
 
-    }
-
-    @FXML
-    public void onJobCardNew() {
-        openServiceJobCard(null);
     }
 
     @FXML
     public void onJobCardEdit() {
+        // 1) Kijelölt munkalap a táblából
+        var sel = jobCardTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            new Alert(Alert.AlertType.INFORMATION,
+                    "Válassz ki egy munkalapot a listából!").showAndWait();
+            return;
+        }
+
+        try {
+            // 2) Töltsük be a hozzátartozó ügyfelet és járművet (hogy a form fejlécében is legyenek adatok)
+            Customer custObj = null;
+            Vehicle vehObj = null;
+
+            if (sel.getCustomer_id() != null && sel.getCustomer_id() > 0) {
+                custObj = customerDao.findById(sel.getCustomer_id());
+            }
+
+            if (sel.getVehicle_id() != null && sel.getVehicle_id() > 0) {
+                vehObj = vehicleDao.findById(sel.getVehicle_id());
+            }
+
+            // 3) Nyissuk meg ugyanazzal a helperrel, amit már használsz AppointmentFormController-ben
+            Stage dlg = Forms.serviceJobCard(sel, custObj, vehObj);
+            dlg.initOwner(jobCardTable.getScene().getWindow());
+            dlg.initModality(Modality.WINDOW_MODAL);
+
+            // 4) Mutatjuk a dialógust
+            dlg.showAndWait();
+
+            // 5) Mentés után frissítjük a táblát
+            refreshJobCards();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            new Alert(Alert.AlertType.ERROR,
+                    "Hiba a munkalap megnyitásakor:\n" + ex.getMessage()
+            ).showAndWait();
+        }
 
     }
 

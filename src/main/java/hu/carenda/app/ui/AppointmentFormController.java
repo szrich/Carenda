@@ -2,10 +2,13 @@ package hu.carenda.app.ui;
 
 import hu.carenda.app.model.Appointment;
 import hu.carenda.app.model.Customer;
+import hu.carenda.app.model.ServiceJobCard;
 import hu.carenda.app.model.Vehicle;
 import hu.carenda.app.repository.AppointmentDao;
 import hu.carenda.app.repository.CustomerDao;
 import hu.carenda.app.repository.VehicleDao;
+import hu.carenda.app.repository.ServiceJobCardDao;
+import hu.carenda.app.model.ServiceJobCard;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -15,6 +18,7 @@ import javafx.util.StringConverter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import javafx.stage.Modality;
 
 public class AppointmentFormController {
 
@@ -53,6 +57,7 @@ public class AppointmentFormController {
     private final AppointmentDao apptDao = new AppointmentDao();
     private final CustomerDao customerDao = new CustomerDao();
     private final VehicleDao vehicleDao = new VehicleDao();
+    private final ServiceJobCardDao jobCardDao = new ServiceJobCardDao();
 
     private Appointment editing;
 
@@ -298,7 +303,7 @@ public class AppointmentFormController {
             var st = statusCombo.getValue();
             var nt = note.getText();
 
-            // --- 2️⃣ Alapvető validációk ---
+            // --- 2️⃣ Alap validációk ---
             if (c == null) {
                 new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új ügyfelet.").showAndWait();
                 return;
@@ -341,14 +346,88 @@ public class AppointmentFormController {
             }
 
             // --- 3️⃣ Dátum + idő kombinálása ---
-            LocalDateTime ldt = d.atTime(hh == null ? 0 : hh, mm == null ? 0 : mm);
-            String when = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+            java.time.LocalDateTime ldt = d.atTime(hh == null ? 0 : hh, mm == null ? 0 : mm);
 
-            // 4) Ügyfél + jármű UPSERT (INSERT vagy UPDATE)
+            // --- 4️⃣ Nyitvatartási ellenőrzés (08:00 - 17:00, plusz ne lógjon túl 17:00 után) ---
+            java.time.LocalTime startTime = ldt.toLocalTime();
+            java.time.LocalTime openTime = java.time.LocalTime.of(8, 0);
+            java.time.LocalTime closeTime = java.time.LocalTime.of(17, 0);
+            /*
+            if (startTime.isBefore(openTime) || startTime.isAfter(closeTime)) {
+                new Alert(
+                        Alert.AlertType.WARNING,
+                        "Időpont csak 08:00 és 17:00 között rögzíthető."
+                ).showAndWait();
+                return;
+            }
+             */
+            java.time.LocalDateTime endLdt = ldt.plusMinutes(dur);
+            java.time.LocalTime endTime = endLdt.toLocalTime();
+            if (endTime.isAfter(closeTime)) {
+                new Alert(
+                        Alert.AlertType.WARNING,
+                        "A munka vége kilógna 17:00 után.\n"
+                        + "Válassz korábbi időpontot vagy rövidebb időtartamot."
+                ).showAndWait();
+                return;
+            }
+
+            // --- 5️⃣ Kapacitás-limit: egyszerre max 2 foglalás ---
+            // lekérjük az adott nap összes időpontját
+            String dayIso = d.toString(); // LocalDate -> "YYYY-MM-DD"
+            var sameDayAppointments = apptDao.findForDay(dayIso);
+
+            int overlaps = 0;
+
+            for (var ap : sameDayAppointments) {
+
+                // ha épp UPDATE van, ne számoljuk bele saját magát:
+                if (editing != null && editing.getId() != 0 && ap.getId() == editing.getId()) {
+                    continue;
+                }
+
+                // parse stored start_ts ("yyyy-MM-dd'T'HH:mm")
+                java.time.LocalDateTime apStart;
+                try {
+                    apStart = java.time.LocalDateTime.parse(
+                            ap.getStartTs(),
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+                    );
+                } catch (Exception bad) {
+                    // ha valami nagyon fura, hagyjuk inkább számolni, ne blokkoljunk tévesen
+                    continue;
+                }
+
+                java.time.LocalDateTime apEnd = apStart.plusMinutes(ap.getDurationMinutes());
+
+                // intervallum átfedés ellenőrzés:
+                // (apStart < endLdt) && (apEnd > ldt)
+                boolean overlap
+                        = apStart.isBefore(endLdt)
+                        && apEnd.isAfter(ldt);
+
+                if (overlap) {
+                    overlaps++;
+                }
+            }
+
+            // ha már kettő másik van, akkor a mostani lenne a 3. => STOP
+            if (overlaps >= 2) {
+                new Alert(Alert.AlertType.WARNING,
+                        "Ebben az időszakban már van két lefoglalt munka.\n"
+                        + "Válassz másik időpontot."
+                ).showAndWait();
+                return;
+            }
+
+            // --- 6️⃣ Timestamp string az adatbázishoz ---
+            String when = ldt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+
+            // --- 7️⃣ Ügyfél + jármű mentése / frissítése ---
             int customerId = upsertCustomer(c, ph, e);
             int vehicleId = upsertVehicle(v, customerId, b, m);
 
-// 5) Időpont INSERT/UPDATE
+            // --- 8️⃣ appointments beszúrás / update ---
             boolean isNew = (editing == null) || editing.getId() == 0;
             if (isNew) {
                 apptDao.insert(customerId, vehicleId, when, dur, nt, st);
@@ -356,7 +435,7 @@ public class AppointmentFormController {
                 apptDao.update(editing.getId(), customerId, vehicleId, when, dur, nt, st);
             }
 
-// 6) jelez + zár
+            // --- 9️⃣ ablak zárása ---
             Stage stage = (Stage) datePicker.getScene().getWindow();
             stage.setUserData(Boolean.TRUE);
             stage.close();
@@ -370,6 +449,73 @@ public class AppointmentFormController {
     @FXML
     public void onCancel() {
         ((Stage) datePicker.getScene().getWindow()).close();
+    }
+
+    @FXML
+    public void onJobCard() {
+        try {
+            // 1) Kell, hogy legyen elmentett időpont (különben nincs appointment_id)
+            if (editing == null || editing.getId() == 0) {
+                new Alert(Alert.AlertType.WARNING,
+                        "Előbb mentsd el az időpontot, utána lehet munkalapot nyitni."
+                ).showAndWait();
+                return;
+            }
+
+            int apptId = editing.getId();
+            int custId = editing.getCustomerId();
+            int vehId = editing.getVehicleId();
+
+            // 2) Megnézzük, van-e már munkalap ehhez az appointmenthez
+            ServiceJobCard existingCard = jobCardDao.findByAppointmentId(apptId);
+
+            ServiceJobCard cardToUse;
+            if (existingCard != null) {
+                // 🟢 már létező munkalap -> azt szerkesztjük
+                cardToUse = existingCard;
+            } else {
+                // 🔵 még nincs munkalap -> csinálunk egy új, "előkészített" objektumot
+                cardToUse = new ServiceJobCard();
+
+                // kössük össze az appointmenttel, ügyféllel, járművel
+                cardToUse.setAppointment_id(apptId);
+                cardToUse.setCustomer_id(custId);
+                cardToUse.setVehicle_id(vehId);
+
+                // alap státusz
+                cardToUse.setStatus("OPEN");
+
+                // rögzítés ideje default most
+                cardToUse.setCreated_at(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+                // km-óra ismeret szerint majd még finomítjuk (lent)
+            }
+
+            // 3) Hozzuk be az ügyfél + jármű objektumokat is,
+            //    hogy az űrlap TUDJA előtölteni a customerName / plate / stb mezőket.
+            var custObj = customerDao.findById(custId);
+            var vehObj = vehicleDao.findById(vehId);
+
+            // 4) Nyissuk meg a munkalap ablakot, és adjuk át
+            //    - a munkalapot (akár meglévő, akár új)
+            //    - az ügyfél adatokat
+            //    - a jármű adatokat
+            Stage dlg = Forms.serviceJobCard(cardToUse, custObj, vehObj);
+
+            // modal legyen, hogy ne lehessen közben kattintgatni mást
+            dlg.initModality(Modality.APPLICATION_MODAL);
+
+            // 5) megjelenítés
+            dlg.showAndWait();
+
+            // 6) (opcionális) ha szeretnéd, frissítheted utána a státuszt a formodon
+            // pl. ha a munkalapon státusz DELIVERED lett, az appointment státusza is frissülhetne.
+        } catch (Exception e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR,
+                    "Hiba a munkalap megnyitásakor:\n" + e.getMessage()
+            ).showAndWait();
+        }
     }
 
     /**
@@ -404,7 +550,7 @@ public class AppointmentFormController {
         if (v == null) {
             throw new IllegalArgumentException("vehicle null");
         }
-        
+
         if (brandStr != null && !brandStr.trim().isEmpty()) {
             v.setBrand(brandStr.trim());
         }
