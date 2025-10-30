@@ -50,6 +50,8 @@ public class ScheduleController {
     private static final double HOUR_PIXELS = 60.0;
     private static final double COL_WIDTH = 150.0;
 
+    private static final double DAY_HEADER_OFFSET = 24.0;
+
     @FXML
     public void initialize() {
         if (dayPicker.getValue() == null) {
@@ -118,9 +120,25 @@ public class ScheduleController {
         var to = day.plusDays(1).atTime(0, 0);
         var appts = apptDao.findBetween(from.toString(), to.toString());
 
-        double height = (DAY_END_HOUR - DAY_START_HOUR) * HOUR_PIXELS;
+        double height = DAY_HEADER_OFFSET + (DAY_END_HOUR - DAY_START_HOUR) * HOUR_PIXELS;
         canvas.setPrefHeight(height);
-        canvas.setPrefWidth(700);
+
+        canvas.setPrefWidth(1000);
+
+        // --- cím felül: 2025.10.27. Hétfő ---
+        var dayNameFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE", new java.util.Locale("hu"));
+        var dateFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd.", new java.util.Locale("hu"));
+
+        String dayName = day.format(dayNameFormatter);        // "hétfő"
+        dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1); // "Hétfő"
+
+        String headerText = dateFormatter.format(day) + " " + dayName;
+
+        var headerLabel = new Label(headerText);
+        headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        headerLabel.setLayoutX(8);
+        headerLabel.setLayoutY(4);
+        canvas.getChildren().add(headerLabel);
 
         // --- RÁCSVONALAK ---
         addHourLines(canvas.getPrefWidth());
@@ -135,11 +153,13 @@ public class ScheduleController {
             double minutesFromStart = java.time.Duration
                     .between(day.atTime(DAY_START_HOUR, 0), start).toMinutes();
 
-            double y = Math.max(0, minutesFromStart * (HOUR_PIXELS / 60.0));
+            double y = DAY_HEADER_OFFSET
+                    + Math.max(0, minutesFromStart * (HOUR_PIXELS / 60.0));
+
             double h = Math.max(22, a.getDurationMinutes() * (HOUR_PIXELS / 60.0));
 
             // szélesség felezés, ha kell
-            double fullWidth = 680; // eddig fixen ezt adtad
+            double fullWidth = 980; // eddig fixen ezt adtad
             double w = fullWidth / placed.totalCols;
             double x = placed.columnIndex * w;
 
@@ -165,7 +185,8 @@ public class ScheduleController {
 
         // oszlop-fejlécek (H, K, Sz...)
         for (int d = 0; d < 7; d++) {
-            var head = new Label(monday.plusDays(d).getDayOfWeek().toString().substring(0, 3));
+            var formatter = java.time.format.DateTimeFormatter.ofPattern("EEEE", new java.util.Locale("hu"));
+            var head = new Label(monday.plusDays(d).format(formatter));
             head.setStyle("-fx-font-weight: bold;");
             head.setLayoutX(d * COL_WIDTH + 6);
             head.setLayoutY(4);
@@ -269,10 +290,10 @@ public class ScheduleController {
     // ---- GRID VONALAK (órák / napok) ----
     private void addHourLines(double width) {
         for (int h = DAY_START_HOUR; h <= DAY_END_HOUR; h++) {
-            double y = (h - DAY_START_HOUR) * HOUR_PIXELS;
+            double y = DAY_HEADER_OFFSET + (h - DAY_START_HOUR) * HOUR_PIXELS;
             javafx.scene.shape.Line line = new javafx.scene.shape.Line(0, y, width, y);
-            styleGridLine(line, 1.0);        // vékony vonal
-            line.setMouseTransparent(true);  // ne fogja a kattintást
+            styleGridLine(line, 1.0);
+            line.setMouseTransparent(true);
             canvas.getChildren().add(line);
         }
     }

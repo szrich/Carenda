@@ -22,7 +22,6 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import javafx.print.PrinterJob;
 import javafx.scene.control.cell.TextFieldTableCell;
 
 /**

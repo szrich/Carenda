@@ -277,7 +277,6 @@
             </padding>
             <CheckBox fx:id="termsAccepted" text="Feltételek elfogadása"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="btnPrint" text="Nyomtatás"/>
             <Button fx:id="btnPdf" text="PDF mentés"/>
             <Button fx:id="btnCancel" text="Mégse"/>
             <Button fx:id="btnSave" text="Mentés" defaultButton="true"/>

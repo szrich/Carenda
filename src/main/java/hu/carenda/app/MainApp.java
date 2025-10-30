@@ -16,7 +16,7 @@ public class MainApp extends Application {
                 "Nem találom a /hu/carenda/app/views/login.fxml erőforrást. Ellenőrizd az útvonalat és a fájlnevet!")
         );
         stage.setTitle("Carenda – Bejelentkezés");
-        stage.setScene(new Scene(root, 1420, 1260));
+        stage.setScene(new Scene(root, 420, 260));
         stage.show();
     }
     public static void main(String[] args) { launch(args); }

@@ -88,7 +88,8 @@ public class LoginController {
 
         Stage stage = (Stage) usernameField.getScene().getWindow();
         stage.setTitle("Carenda – Vezérlőpult");
-        stage.setScene(new Scene(root, 1200, 900));
+        stage.setScene(new Scene(root));
+        stage.setMaximized(true);
         stage.show();
     }
 

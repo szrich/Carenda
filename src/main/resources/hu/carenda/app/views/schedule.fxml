@@ -39,10 +39,10 @@
                 <padding>
                     <Insets top="8.0" right="8.0" bottom="8.0" left="8.0"/>
                 </padding>
-
+           
                 <VBox fx:id="timeGutter" prefWidth="70.0" spacing="0.0"/>
                 <StackPane style="-fx-background-color: -fx-base; -fx-background-insets: 0;">
-                    <Pane fx:id="canvas" prefWidth="700.0"/>
+                    <Pane fx:id="canvas" prefWidth="1000.0"/>
                 </StackPane>
             </HBox>
         </ScrollPane>
