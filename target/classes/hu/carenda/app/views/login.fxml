@@ -2,7 +2,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <GridPane xmlns:fx="http://javafx.com/fxml"
-          fx:controller="hu.carenda.app.ui.LoginController"
+          fx:controller="hu.carenda.app.ui.LoginFormController"
           hgap="12" vgap="10" alignment="CENTER" stylesheets="@../css/app.css">
     <columnConstraints>
         <ColumnConstraints minWidth="120" halignment="RIGHT"/>

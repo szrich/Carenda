@@ -3,13 +3,17 @@ package hu.carenda.app.repository;
 import hu.carenda.app.db.Database;
 import hu.carenda.app.model.ServiceJobCardWorkDesc;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceJobCardWorkDescDao {
 
-    private ServiceJobCardWorkDesc map(ResultSet rs) throws Exception {
+    private ServiceJobCardWorkDesc map(ResultSet rs) throws SQLException {
         ServiceJobCardWorkDesc w = new ServiceJobCardWorkDesc();
         w.setId(rs.getInt("id"));
         w.setSjc_id(rs.getInt("sjc_id"));
@@ -23,6 +27,7 @@ public class ServiceJobCardWorkDescDao {
 
     /**
      * Összes sor visszaadása (debug / admin nézethez).
+     * @return 
      */
     public List<ServiceJobCardWorkDesc> findAll() {
         String sql = """
@@ -30,9 +35,9 @@ public class ServiceJobCardWorkDescDao {
               FROM servicejobcard_workdesc
              ORDER BY sjc_id, sort_order, id
             """;
-        try (var c = Database.get();
-             var st = c.createStatement();
-             var rs = st.executeQuery(sql)) {
+        try (Connection c = Database.get();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
 
             List<ServiceJobCardWorkDesc> out = new ArrayList<>();
             while (rs.next()) {
@@ -40,13 +45,15 @@ public class ServiceJobCardWorkDescDao {
             }
             return out;
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.findAll", e);
         }
     }
 
     /**
      * Adott munkalaphoz (servicejobcard.id -> sjc_id) tartozó munkadíj tételek.
+     * @param sjcId
+     * @return 
      */
     public List<ServiceJobCardWorkDesc> findByJobCard(int sjcId) {
         String sql = """
@@ -55,8 +62,8 @@ public class ServiceJobCardWorkDescDao {
              WHERE sjc_id=?
              ORDER BY sort_order, id
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, sjcId);
 
@@ -68,13 +75,15 @@ public class ServiceJobCardWorkDescDao {
                 return out;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.findByJobCard", e);
         }
     }
 
     /**
      * Egy sor lekérése id alapján.
+     * @param id
+     * @return 
      */
     public ServiceJobCardWorkDesc findById(int id) {
         String sql = """
@@ -82,8 +91,8 @@ public class ServiceJobCardWorkDescDao {
               FROM servicejobcard_workdesc
              WHERE id=?
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
 
@@ -91,14 +100,21 @@ public class ServiceJobCardWorkDescDao {
                 return rs.next() ? map(rs) : null;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.findById", e);
         }
     }
 
     /**
      * Új munkadíj tétel beszúrása.
      * Visszatér az új sor autoincrement ID-jával.
+     * @param sjcId
+     * @param name
+     * @param hours
+     * @param rateCents
+     * @param vatPercent
+     * @param sortOrder
+     * @return 
      */
     public int insert(int sjcId,
                       String name,
@@ -113,8 +129,8 @@ public class ServiceJobCardWorkDescDao {
             VALUES (?,?,?,?,?,?)
             """;
 
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, sjcId);
             ps.setString(2, name);
@@ -126,17 +142,26 @@ public class ServiceJobCardWorkDescDao {
             ps.executeUpdate();
 
             try (var keys = ps.getGeneratedKeys()) {
-                return keys.next() ? keys.getInt(1) : 0;
+                if (keys.next()) {
+                    return keys.getInt(1);
+                } else {
+                    throw new SQLException("Munkadíj tétel létrehozása sikertelen, nem kaptunk ID-t.");
+                }
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) { 
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.insert", e);
         }
     }
 
     /**
-     * Létező tétel módosítása (általában név, óra, ár, ÁFA, sorrend).
-     * A sjc_id-t direkt nem piszkáljuk itt.
+     * Létező tétel módosítása (általában név, óra, ár, ÁFA, sorrend)
+     * @param id.
+     * @param name
+     * @param hours
+     * @param rateCents
+     * @param vatPercent
+     * @param sortOrder
      */
     public void update(int id,
                        String name,
@@ -155,8 +180,8 @@ public class ServiceJobCardWorkDescDao {
              WHERE id=?
             """;
 
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, name);
             ps.setDouble(2, hours);
@@ -167,43 +192,42 @@ public class ServiceJobCardWorkDescDao {
 
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.update", e);
         }
     }
 
     /**
      * Egy sor törlése id alapján.
+     * @param id
      */
     public void delete(int id) {
         String sql = "DELETE FROM servicejobcard_workdesc WHERE id=?";
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.delete", e);
         }
     }
 
     /**
-     * Összes tétel törlése egy adott munkalaphoz (ha pl. újragenerálod).
-     * (FK CASCADE miatt sokszor nem is kell, mert ha törlöd a munkalapot,
-     * akkor a sorok maguktól mennek a kukába. A séma ON DELETE CASCADE-t használ
-     * az sjc_id idegen kulcsnál. :contentReference[oaicite:6]{index=6})
+     * Összes tétel törlése egy adott munkalaphoz.
+     * @param sjcId
      */
     public void deleteByJobCard(int sjcId) {
         String sql = "DELETE FROM servicejobcard_workdesc WHERE sjc_id=?";
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, sjcId);
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardWorkDescDao.deleteByJobCard", e);
         }
     }
 }

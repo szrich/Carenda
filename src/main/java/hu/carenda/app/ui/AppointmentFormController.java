@@ -8,67 +8,78 @@ import hu.carenda.app.repository.AppointmentDao;
 import hu.carenda.app.repository.CustomerDao;
 import hu.carenda.app.repository.VehicleDao;
 import hu.carenda.app.repository.ServiceJobCardDao;
-import hu.carenda.app.model.ServiceJobCard;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import javafx.stage.Modality;
+import java.time.format.DateTimeParseException;
+import java.util.Objects;
 
+/**
+ * Controller az Időpont (Appointment) űrlap (appointment-form.fxml) kezeléséhez.
+ * Felelős az időpontok létrehozásáért, szerkesztéséért, valamint az ügyfél és
+ * jármű adatok "on-the-fly" kezeléséért.
+ */
 public class AppointmentFormController {
 
     @FXML
     private ComboBox<Customer> customerCombo;
     @FXML
-    private TextField phone;
-    @FXML
-    private TextField email;
+    private TextField phone, email, brand, model, duration;
     @FXML
     private ComboBox<Vehicle> vehicleCombo;
     @FXML
-    private TextField brand;
-
-    @FXML
-    private TextField model;
-
-    // ÚJ: DatePicker + óraspinner + percszpinner
-    @FXML
     private DatePicker datePicker;
     @FXML
-    private Spinner<Integer> hourSpinner;
-    @FXML
-    private Spinner<Integer> minuteSpinner;
-
-    @FXML
-    private TextField duration;
+    private Spinner<Integer> hourSpinner, minuteSpinner;
     @FXML
     private ComboBox<String> statusCombo;
     @FXML
     private TextArea note;
 
-    @FXML
-    private Button saveBtn;
-
+    // A DAO-k (adatelérési réteg)
     private final AppointmentDao apptDao = new AppointmentDao();
     private final CustomerDao customerDao = new CustomerDao();
     private final VehicleDao vehicleDao = new VehicleDao();
     private final ServiceJobCardDao jobCardDao = new ServiceJobCardDao();
 
+    /** A szerkesztett időpont. Ha null, akkor új időpontot hozunk létre. */
     private Appointment editing;
 
-    // mentéshez / visszatöltéshez ezt a formát használjuk
+    /** Egységes formátum az LocalDateTime tárolásához és olvasásához. */
     private static final DateTimeFormatter LDT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
     @FXML
     public void initialize() {
-        // Ügyfelek
+        setupCustomerCombo();
+        setupVehicleCombo();
+        setupStatusCombo();
+        setupDateTimePickers();
+
+        // Alapérték a duration-nek, ha üres marad
+        if (duration.getText() == null || duration.getText().isBlank()) {
+            duration.setText("60");
+        }
+    }
+
+    /**
+     * Beállítja az Ügyfél comboboxot, beleértve a cella kinézetét,
+     * a kapcsolódó mezők (telefon, email) frissítését,
+     * és az "on-the-fly" ügyfél-létrehozást.
+     */
+    private void setupCustomerCombo() {
         var customers = FXCollections.observableArrayList(customerDao.findAll());
         customerCombo.setItems(customers);
+
+        // CellFactory: Hogyan nézzen ki a lenyíló lista
         customerCombo.setCellFactory(cb -> new ListCell<>() {
             @Override
             protected void updateItem(Customer item, boolean empty) {
@@ -76,6 +87,8 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getName());
             }
         });
+
+        // ButtonCell: Hogyan nézzen ki a kiválasztott elem
         customerCombo.setButtonCell(new ListCell<>() {
             @Override
             protected void updateItem(Customer item, boolean empty) {
@@ -83,22 +96,63 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getName());
             }
         });
+
+        // Listener: Ha az ügyfél változik, frissítjük a telefon és email mezőket
         customerCombo.valueProperty().addListener((obs, oldCustomer, newCustomer) -> {
             if (newCustomer != null) {
                 phone.setText(newCustomer.getPhone());
+                email.setText(newCustomer.getEmail());
+                // ... és betöltjük a hozzá tartozó járműveket
+                var vehicles = FXCollections.observableArrayList(vehicleDao.findByCustomer(newCustomer.getId()));
+                vehicleCombo.setItems(vehicles);
+                vehicleCombo.getSelectionModel().clearSelection();
             } else {
                 phone.clear();
-            }
-        });
-        customerCombo.valueProperty().addListener((obs, oldEmail, newEmail) -> {
-            if (newEmail != null) {
-                email.setText(newEmail.getEmail());
-            } else {
                 email.clear();
+                vehicleCombo.setItems(FXCollections.observableArrayList());
             }
         });
 
-        // Jármű megjelenítés
+        // Converter: Kezeli a szöveg beírást (új ügyfél létrehozása)
+        customerCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Customer c) {
+                return (c == null || c.getName() == null) ? "" : c.getName();
+            }
+
+            @Override
+            public Customer fromString(String s) {
+                if (s == null || s.isBlank()) {
+                    return null;
+                }
+                // Keresés a meglévők között
+                Customer existing = customerCombo.getItems().stream()
+                        .filter(x -> s.equalsIgnoreCase(x.getName()))
+                        .findFirst()
+                        .orElse(null);
+                if (existing != null) {
+                    return existing;
+                }
+
+                // Ha nincs, új létrehozása "on-the-fly"
+                Customer nc = new Customer();
+                nc.setId(null); // JAVÍTVA: 0 helyett null, jelezve, hogy új
+                nc.setName(s.trim());
+                if (phone != null) nc.setPhone(phone.getText());
+                if (email != null) nc.setEmail(email.getText());
+
+                customerCombo.getItems().add(nc);
+                customerCombo.getSelectionModel().select(nc);
+                return nc;
+            }
+        });
+    }
+
+    /**
+     * Beállítja a Jármű comboboxot (kinézet, kapcsolódó mezők, "on-the-fly" létrehozás).
+     */
+    private void setupVehicleCombo() {
+        // Jármű megjelenítés (Rendszám)
         vehicleCombo.setCellFactory(cb -> new ListCell<>() {
             @Override
             protected void updateItem(Vehicle item, boolean empty) {
@@ -113,102 +167,23 @@ public class AppointmentFormController {
                 setText(empty || item == null ? null : item.getPlate());
             }
         });
-        vehicleCombo.valueProperty().addListener((obs, oldBrand, newBrand) -> {
-            if (newBrand != null) {
-                brand.setText(newBrand.getBrand());
+
+        // Listener: Ha a jármű változik, frissítjük a gyártmány/modell mezőket
+        vehicleCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                brand.setText(newVal.getBrand());
+                model.setText(newVal.getModel());
             } else {
                 brand.clear();
-            }
-        });
-        vehicleCombo.valueProperty().addListener((obs, oldModel, newModel) -> {
-            if (newModel != null) {
-                model.setText(newModel.getModel());
-            } else {
                 model.clear();
             }
         });
 
-        // Ügyfél → járművek betöltése
-        customerCombo.valueProperty().addListener((obs, oldVal, nv) -> {
-            if (nv != null) {
-                var vehicles = FXCollections.observableArrayList(vehicleDao.findByCustomer(nv.getId()));
-                vehicleCombo.setItems(vehicles);
-                vehicleCombo.getSelectionModel().clearSelection();
-            } else {
-                vehicleCombo.setItems(FXCollections.observableArrayList());
-            }
-        });
-
-        // Státuszok
-        statusCombo.setItems(FXCollections.observableArrayList("TERVEZETT", "BEFEJEZETT", "LEMONDOTT"));
-        statusCombo.getSelectionModel().select("TERVEZETT");
-
-        // Dátum + idő alapérték: most
-        datePicker.setValue(LocalDate.now());
-
-        // Óra spinner: 0–23
-        hourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, LocalDateTime.now().getHour(), 1));
-        hourSpinner.setEditable(true);
-
-        // Perc spinner: 0–59 (5-ös léptékkel kényelmesebb)
-        minuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, LocalDateTime.now().getMinute(), 5));
-        minuteSpinner.setEditable(true);
-
-        // Alapérték a duration-nek, ha üres marad
-        if (duration.getText() == null || duration.getText().isBlank()) {
-            duration.setText("60");
-        }
-
-        // Ha valamiért az FXML onAction nem fut, kössük rá programból is
-        if (saveBtn != null) {
-            saveBtn.setOnAction(e -> onSave());
-        }
-
-        // Customer megjelenítés + "beírásból létrehozás" (JDK8 kompatibilis)
-        customerCombo.setConverter(new StringConverter<Customer>() {
-            @Override
-            public String toString(Customer c) {
-                return (c == null) ? "" : c.getName();
-            }
-
-            @Override
-            public Customer fromString(String s) {
-                if (s == null || s.isBlank()) {
-                    return null;
-                }
-
-                // van-e már ilyen név?
-                Customer existing = customerCombo.getItems().stream()
-                        .filter(x -> s.equalsIgnoreCase(x.getName()))
-                        .findFirst()
-                        .orElse(null);
-
-                if (existing != null) {
-                    return existing;
-                }
-
-                // Új ügyfél létrehozása a beírt névvel
-                Customer nc = new Customer();
-                nc.setId(0);                // jelzi, hogy új
-                nc.setName(s.trim());
-                // ha már be van írva telefon/email, átvesszük
-                if (phone != null) {
-                    nc.setPhone(phone.getText());
-                }
-                if (email != null) {
-                    nc.setEmail(email.getText());
-                }
-
-                customerCombo.getItems().add(nc);
-                customerCombo.getSelectionModel().select(nc);
-                return nc;
-            }
-        });
-
-        vehicleCombo.setConverter(new StringConverter<Vehicle>() {
+        // Converter: Kezeli a szöveg beírást (új jármű létrehozása)
+        vehicleCombo.setConverter(new StringConverter<>() {
             @Override
             public String toString(Vehicle v) {
-                return (v == null) ? "" : v.getPlate();  // a combón a rendszám látszik
+                return (v == null || v.getPlate() == null) ? "" : v.getPlate();
             }
 
             @Override
@@ -216,323 +191,320 @@ public class AppointmentFormController {
                 if (s == null || s.isBlank()) {
                     return null;
                 }
-
+                // Keresés a meglévők között (rendszám alapján)
                 Vehicle existing = vehicleCombo.getItems().stream()
                         .filter(x -> s.equalsIgnoreCase(x.getPlate()))
                         .findFirst()
                         .orElse(null);
-
                 if (existing != null) {
                     return existing;
                 }
 
+                // Új létrehozása "on-the-fly"
                 Vehicle nv = new Vehicle();
-                nv.setId(0);                // új
-                nv.setPlate(s.trim());      // beírt érték a rendszám
-                if (model != null) {
-                    nv.setBrand(model.getText()); // típus/modell mezőből
-                }
+                nv.setId(null);
+                nv.setPlate(s.trim().toUpperCase()); // Rendszámot érdemes nagybetűsíteni
+                if (brand != null) nv.setBrand(brand.getText());
+                if (model != null) nv.setModel(model.getText());
+
                 vehicleCombo.getItems().add(nv);
                 vehicleCombo.getSelectionModel().select(nv);
                 return nv;
             }
         });
-
     }
 
     /**
-     * A hívó (Dashboard) beállítja, ha szerkesztésről van szó
+     * Beállítja a Státusz comboboxot.
+     */
+    private void setupStatusCombo() {
+        statusCombo.setItems(FXCollections.observableArrayList("TERVEZETT", "BEFEJEZETT", "LEMONDOTT"));
+        statusCombo.getSelectionModel().select("TERVEZETT");
+    }
+
+    /**
+     * Beállítja a dátum és idő választókat (DatePicker, Spinnerek).
+     */
+    private void setupDateTimePickers() {
+        // Dátum + idő alapérték: most
+        datePicker.setValue(LocalDate.now());
+        LocalDateTime now = LocalDateTime.now();
+
+        // Óra spinner: 0–23
+        hourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, now.getHour(), 1));
+        hourSpinner.setEditable(true);
+
+        // Perc spinner: 0–59 (5-ös léptékkel kényelmesebb)
+        minuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, (now.getMinute() / 5) * 5, 5));
+        minuteSpinner.setEditable(true);
+    }
+
+
+    /**
+     * A hívó (pl. Dashboard) hívja meg, hogy átadja a szerkesztendő objektumot.
+     * @param a A szerkesztendő Appointment, vagy null (ha új).
      */
     public void setEditing(Appointment a) {
         this.editing = a;
-        if (a != null) {
-            // Ügyfél kijelölése
-            for (var c : customerCombo.getItems()) {
-                if (c.getId() == a.getCustomerId()) {
-                    customerCombo.getSelectionModel().select(c);
-                    break;
-                }
-            }
-            // A kiválasztott ügyfél járművei
-            if (customerCombo.getValue() != null) {
-                var vehicles = FXCollections.observableArrayList(
-                        vehicleDao.findByCustomer(customerCombo.getValue().getId())
-                );
-                vehicleCombo.setItems(vehicles);
-            }
-            // Jármű kijelölése
-            for (var v : vehicleCombo.getItems()) {
-                if (v.getId() == a.getVehicleId()) {
-                    vehicleCombo.getSelectionModel().select(v);
-                    break;
-                }
-            }
+        if (a == null) {
+            return; // Új időpont, nincs mit betölteni
+        }
 
-            // Dátum/idő visszatöltés
-            try {
-                LocalDateTime ldt = LocalDateTime.parse(a.getStartTs(), LDT_FMT);
-                datePicker.setValue(ldt.toLocalDate());
-                hourSpinner.getValueFactory().setValue(ldt.getHour());
-                minuteSpinner.getValueFactory().setValue(ldt.getMinute());
-            } catch (Exception ignore) {
-                // ha nem sikerül parzolni, maradnak az alapértékek
-            }
+        // --- Adatok betöltése szerkesztéshez ---
 
-            duration.setText(String.valueOf(a.getDurationMinutes()));
-            note.setText(a.getNote() == null ? "" : a.getNote());
-            if (a.getStatus() != null) {
-                statusCombo.getSelectionModel().select(a.getStatus());
-            }
+        // 1. Ügyfél kijelölése
+        customerCombo.getItems().stream()
+                .filter(c -> Objects.equals(c.getId(), a.getCustomerId()))
+                .findFirst()
+                .ifPresent(customerCombo.getSelectionModel()::select);
+
+        // 2. Járműlista frissítése (a listener miatt ez automatikus)
+        // és a Jármű kijelölése
+        vehicleCombo.getItems().stream()
+                .filter(v -> Objects.equals(v.getId(), a.getVehicleId()))
+                .findFirst()
+                .ifPresent(vehicleCombo.getSelectionModel()::select);
+
+        // 3. Dátum/idő visszatöltés
+        try {
+            LocalDateTime ldt = LocalDateTime.parse(a.getStartTs(), LDT_FMT);
+            datePicker.setValue(ldt.toLocalDate());
+            hourSpinner.getValueFactory().setValue(ldt.getHour());
+            minuteSpinner.getValueFactory().setValue(ldt.getMinute());
+        } catch (DateTimeParseException | NullPointerException ignore) {
+            // ha nem sikerül parzolni, maradnak az alapértékek
+        }
+
+        // 4. Többi mező
+        duration.setText(String.valueOf(a.getDurationMinutes()));
+        note.setText(a.getNote() == null ? "" : a.getNote());
+        if (a.getStatus() != null) {
+            statusCombo.getSelectionModel().select(a.getStatus());
         }
     }
 
     @FXML
     public void onSave() {
         try {
-            // --- 1️⃣ Adatok kiolvasása az űrlapból ---
-            var c = customerCombo.getValue();
-            var ph = phone.getText();
-            var e = email.getText();
-            var v = vehicleCombo.getValue();
-            var b = brand.getText();
-            var m = model.getText();
-            var d = datePicker.getValue();
-            var hh = hourSpinner.getValue();
-            var mm = minuteSpinner.getValue();
-            var durStr = duration.getText().trim();
-            var st = statusCombo.getValue();
-            var nt = note.getText();
+            // --- Adatok kiolvasása és validálása ---
+            Customer c = customerCombo.getValue();
+            Vehicle v = vehicleCombo.getValue();
+            LocalDate d = datePicker.getValue();
+            Integer hh = hourSpinner.getValue();
+            Integer mm = minuteSpinner.getValue();
+            String st = statusCombo.getValue();
+            String nt = note.getText();
 
-            // --- 2️⃣ Alap validációk ---
-            if (c == null) {
-                new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új ügyfelet.").showAndWait();
-                return;
-            }
-            if (ph == null) {
-                new Alert(Alert.AlertType.WARNING, "Írj be az ügyfélhez telefonszámot.").showAndWait();
-                return;
-            }
-            if (e == null) {
-                new Alert(Alert.AlertType.WARNING, "Írj be az ügyfélhez e-mail címet.").showAndWait();
-                return;
-            }
-            if (v == null) {
-                new Alert(Alert.AlertType.WARNING, "Válassz, vagy írj be új járművet.").showAndWait();
-                return;
-            }
-            if (b == null) {
-                new Alert(Alert.AlertType.WARNING, "Írjd be a gépjármű tipusát.").showAndWait();
-                return;
-            }
-            if (m == null) {
-                new Alert(Alert.AlertType.WARNING, "Írjd be a gépjármű tipusát.").showAndWait();
-                return;
-            }
-            if (d == null) {
-                new Alert(Alert.AlertType.WARNING, "Válassz dátumot.").showAndWait();
-                return;
-            }
-            if (st == null || st.isBlank()) {
-                statusCombo.getSelectionModel().selectFirst();
-                st = statusCombo.getValue();
+            // Egyszerűsített validáció segédfüggvénnyel
+            if (!validateInputs(c, v, d, st)) {
+                return; // A validáló már mutatott hibaüzenetet
             }
 
             int dur;
             try {
-                dur = Integer.parseInt(durStr);
+                dur = Integer.parseInt(duration.getText().trim());
             } catch (NumberFormatException ex) {
-                new Alert(Alert.AlertType.WARNING, "Az időtartam percben egész szám legyen.").showAndWait();
+                showWarning("Érvénytelen időtartam", "Az időtartam percben egész szám legyen.");
                 return;
             }
 
-            // --- 3️⃣ Dátum + idő kombinálása ---
-            java.time.LocalDateTime ldt = d.atTime(hh == null ? 0 : hh, mm == null ? 0 : mm);
+            // --- Időpont összeállítása ---
+            LocalDateTime ldt = d.atTime(hh, mm);
+            LocalDateTime endLdt = ldt.plusMinutes(dur);
+            String when = ldt.format(LDT_FMT);
 
-            // --- 4️⃣ Nyitvatartási ellenőrzés (08:00 - 17:00, plusz ne lógjon túl 17:00 után) ---
-            java.time.LocalTime startTime = ldt.toLocalTime();
-            java.time.LocalTime openTime = java.time.LocalTime.of(8, 0);
-            java.time.LocalTime closeTime = java.time.LocalTime.of(17, 0);
-            /*
-            if (startTime.isBefore(openTime) || startTime.isAfter(closeTime)) {
-                new Alert(
-                        Alert.AlertType.WARNING,
-                        "Időpont csak 08:00 és 17:00 között rögzíthető."
-                ).showAndWait();
+            // --- Üzleti logika ellenőrzés - nyitvatartás - ütközés ---
+            if (!checkBusinessHours(ldt, endLdt)) {
                 return;
             }
-             */
-            java.time.LocalDateTime endLdt = ldt.plusMinutes(dur);
-            java.time.LocalTime endTime = endLdt.toLocalTime();
-            if (endTime.isAfter(closeTime)) {
-                new Alert(
-                        Alert.AlertType.WARNING,
-                        "A munka vége kilógna 17:00 után.\n"
-                        + "Válassz korábbi időpontot vagy rövidebb időtartamot."
-                ).showAndWait();
+            if (!checkAvailability(ldt, endLdt, (editing != null ? editing.getId() : null))) {
                 return;
             }
 
-            // --- 5️⃣ Kapacitás-limit: egyszerre max 2 foglalás ---
-            // lekérjük az adott nap összes időpontját
-            String dayIso = d.toString(); // LocalDate -> "YYYY-MM-DD"
-            var sameDayAppointments = apptDao.findForDay(dayIso);
+            // --- Ügyfél, jármű mentése, frissítése ---
+            // A DAO hívások már a segédfüggvényekben vannak
+            int customerId = upsertCustomer(c, phone.getText(), email.getText());
+            int vehicleId = upsertVehicle(v, customerId, brand.getText(), model.getText());
 
-            int overlaps = 0;
-
-            for (var ap : sameDayAppointments) {
-
-                // ha épp UPDATE van, ne számoljuk bele saját magát:
-                if (editing != null && editing.getId() != 0 && ap.getId() == editing.getId()) {
-                    continue;
-                }
-
-                // parse stored start_ts ("yyyy-MM-dd'T'HH:mm")
-                java.time.LocalDateTime apStart;
-                try {
-                    apStart = java.time.LocalDateTime.parse(
-                            ap.getStartTs(),
-                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-                    );
-                } catch (Exception bad) {
-                    // ha valami nagyon fura, hagyjuk inkább számolni, ne blokkoljunk tévesen
-                    continue;
-                }
-
-                java.time.LocalDateTime apEnd = apStart.plusMinutes(ap.getDurationMinutes());
-
-                // intervallum átfedés ellenőrzés:
-                // (apStart < endLdt) && (apEnd > ldt)
-                boolean overlap
-                        = apStart.isBefore(endLdt)
-                        && apEnd.isAfter(ldt);
-
-                if (overlap) {
-                    overlaps++;
-                }
-            }
-
-            // ha már kettő másik van, akkor a mostani lenne a 3. => STOP
-            if (overlaps >= 2) {
-                new Alert(Alert.AlertType.WARNING,
-                        "Ebben az időszakban már van két lefoglalt munka.\n"
-                        + "Válassz másik időpontot."
-                ).showAndWait();
-                return;
-            }
-
-            // --- 6️⃣ Timestamp string az adatbázishoz ---
-            String when = ldt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
-
-            // --- 7️⃣ Ügyfél + jármű mentése / frissítése ---
-            int customerId = upsertCustomer(c, ph, e);
-            int vehicleId = upsertVehicle(v, customerId, b, m);
-
-            // --- 8️⃣ appointments beszúrás / update ---
-            boolean isNew = (editing == null) || editing.getId() == 0;
+            // --- Időpont mentése - INSERT - UPDATE ---
+            boolean isNew = (editing == null) || (editing.getId() == null); 
             if (isNew) {
                 apptDao.insert(customerId, vehicleId, when, dur, nt, st);
             } else {
                 apptDao.update(editing.getId(), customerId, vehicleId, when, dur, nt, st);
             }
 
-            // --- 9️⃣ ablak zárása ---
-            Stage stage = (Stage) datePicker.getScene().getWindow();
-            stage.setUserData(Boolean.TRUE);
-            stage.close();
+            // --- Ablak bezárása és sikeresség jelzése a Formnak ---
+            closeWindow(true);
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Mentési hiba: " + ex.getMessage()).showAndWait();
+            showError("Mentési hiba", "Váratlan hiba történt: " + ex.getMessage());
         }
     }
 
     @FXML
     public void onCancel() {
-        ((Stage) datePicker.getScene().getWindow()).close();
+        closeWindow(false);
     }
 
     @FXML
     public void onJobCard() {
         try {
             // 1) Kell, hogy legyen elmentett időpont (különben nincs appointment_id)
-            if (editing == null || editing.getId() == 0) {
-                new Alert(Alert.AlertType.WARNING,
-                        "Előbb mentsd el az időpontot, utána lehet munkalapot nyitni."
-                ).showAndWait();
+            if (editing == null || editing.getId() == null) { 
+                showWarning("Művelet nem lehetséges", "Előbb mentse el az időpontot, utána lehet munkalapot nyitni.");
                 return;
             }
 
-            int apptId = editing.getId();
-            int custId = editing.getCustomerId();
-            int vehId = editing.getVehicleId();
+            Integer apptId = editing.getId();
+            Integer custId = editing.getCustomerId();
+            Integer vehId = editing.getVehicleId();
+
+            if (custId == null || vehId == null) {
+                showError("Hiányzó adatok", "Az időponthoz nincs ügyfél vagy jármű rendelve.");
+                return;
+            }
 
             // 2) Megnézzük, van-e már munkalap ehhez az appointmenthez
-            ServiceJobCard existingCard = jobCardDao.findByAppointmentId(apptId);
+            ServiceJobCard cardToUse = jobCardDao.findByAppointmentId(apptId);
 
-            ServiceJobCard cardToUse;
-            if (existingCard != null) {
-                // 🟢 már létező munkalap -> azt szerkesztjük
-                cardToUse = existingCard;
-            } else {
-                // 🔵 még nincs munkalap -> csinálunk egy új, "előkészített" objektumot
+            if (cardToUse == null) {
+                // 3a) Új munkalap előkészítése
                 cardToUse = new ServiceJobCard();
-
-                // kössük össze az appointmenttel, ügyféllel, járművel
                 cardToUse.setAppointment_id(apptId);
                 cardToUse.setCustomer_id(custId);
                 cardToUse.setVehicle_id(vehId);
-
-                // alap státusz
                 cardToUse.setStatus("OPEN");
-
-                // rögzítés ideje default most
                 cardToUse.setCreated_at(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-
-                // km-óra ismeret szerint majd még finomítjuk (lent)
             }
+            // 3b) Ha már létezik (cardToUse != null), azt fogjuk szerkeszteni.
 
-            // 3) Hozzuk be az ügyfél + jármű objektumokat is,
-            //    hogy az űrlap TUDJA előtölteni a customerName / plate / stb mezőket.
+            // 4) Szükséges kontextus objektumok betöltése
             var custObj = customerDao.findById(custId);
             var vehObj = vehicleDao.findById(vehId);
 
-            // 4) Nyissuk meg a munkalap ablakot, és adjuk át
-            //    - a munkalapot (akár meglévő, akár új)
-            //    - az ügyfél adatokat
-            //    - a jármű adatokat
-            Stage dlg = Forms.serviceJobCard(cardToUse, custObj, vehObj);
+            // 5) Ablak megnyitása a refaktorált Forms.java segítségével
+            // 'owner' ablak átadása és a Stage kezelés eltávolítása
+            Window owner = customerCombo.getScene().getWindow();
+            
+            // Ez a hívás megnyitja az ablakot, modálisan, és megvárja, míg bezárul.
+            Forms.serviceJobCard(owner, cardToUse, custObj, vehObj);
 
-            // modal legyen, hogy ne lehessen közben kattintgatni mást
-            dlg.initModality(Modality.APPLICATION_MODAL);
+            // 6) (Opcionális) Frissítés a munkalap bezárása után
+            // ... (pl. státusz frissítése, ha a munkalap állapota változott)
 
-            // 5) megjelenítés
-            dlg.showAndWait();
-
-            // 6) (opcionális) ha szeretnéd, frissítheted utána a státuszt a formodon
-            // pl. ha a munkalapon státusz DELIVERED lett, az appointment státusza is frissülhetne.
         } catch (Exception e) {
             e.printStackTrace();
-            new Alert(Alert.AlertType.ERROR,
-                    "Hiba a munkalap megnyitásakor:\n" + e.getMessage()
-            ).showAndWait();
+            showError("Hiba a munkalap megnyitásakor", e.getMessage());
         }
     }
 
+    // --- Validációs és Üzleti Logikai Segédfüggvények ---
+
     /**
-     * Insert vagy Update a customers táblában. Visszaadja az ID-t.
+     * Ellenőrzi a kötelező mezőket.
+     * @return true, ha minden rendben, false, ha hiányos.
      */
-    private int upsertCustomer(Customer c, String phoneStr, String emailStr) {
+    private boolean validateInputs(Customer c, Vehicle v, LocalDate d, String st) {
         if (c == null) {
-            throw new IllegalArgumentException("customer null");
+            showWarning("Hiányzó adat", "Válasszon, vagy írjon be új ügyfelet.");
+            return false;
         }
-        if (phoneStr != null && !phoneStr.isBlank()) {
-            c.setPhone(phoneStr.trim());
+        if (v == null) {
+            showWarning("Hiányzó adat", "Válasszon, vagy írjon be új járművet.");
+            return false;
         }
-        if (emailStr != null && !emailStr.isBlank()) {
-            c.setEmail(emailStr.trim());
+        if (d == null) {
+            showWarning("Hiányzó adat", "Válasszon dátumot.");
+            return false;
+        }
+        if (st == null || st.isBlank()) {
+            showWarning("Hiányzó adat", "Válasszon státuszt.");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Ellenőrzi, hogy az időpont nyitvatartási időn (8-17) belül van-e.
+     */
+    private boolean checkBusinessHours(LocalDateTime start, LocalDateTime end) {
+        LocalTime openTime = LocalTime.of(8, 0);
+        LocalTime closeTime = LocalTime.of(17, 0);
+
+        if (start.toLocalTime().isBefore(openTime) || start.toLocalTime().isAfter(closeTime)) {
+             showWarning("Nyitvatartási időn kívül", "Időpont csak 08:00 és 17:00 között rögzíthető.");
+             return false;
+        }
+        
+        if (end.toLocalTime().isAfter(closeTime)) {
+            showWarning("Nyitvatartási időn kívül",
+                    "A munka vége ( " + end.toLocalTime() + " ) kilógna 17:00 után.\n"
+                    + "Válasszon korábbi időpontot vagy rövidebb időtartamot.");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Ellenőrzi a kapacitást (max 2 átfedés) az adott napon.
+     * @param newStart Az új/módosított időpont kezdete.
+     * @param newEnd Az új/módosított időpont vége.
+     * @param editingId A szerkesztett időpont ID-ja (vagy null), hogy ne önmagával ütközzön.
+     * @return true, ha van szabad kapacitás, false, ha tele van.
+     */
+    private boolean checkAvailability(LocalDateTime newStart, LocalDateTime newEnd, Integer editingId) {
+        String dayIso = newStart.toLocalDate().toString(); // "YYYY-MM-DD"
+        var sameDayAppointments = apptDao.findForDay(dayIso);
+
+        int overlaps = 0;
+        for (var ap : sameDayAppointments) {
+
+            // ha épp UPDATE van, ne számoljuk bele saját magát:
+            if (editingId != null && Objects.equals(ap.getId(), editingId)) { 
+                continue;
+            }
+
+            try {
+                LocalDateTime apStart = LocalDateTime.parse(ap.getStartTs(), LDT_FMT);
+                LocalDateTime apEnd = apStart.plusMinutes(ap.getDurationMinutes());
+
+                // Intervallum átfedés ellenőrzés: (apStart < newEnd) && (apEnd > newStart)
+                boolean overlap = apStart.isBefore(newEnd) && apEnd.isAfter(newStart);
+
+                if (overlap) {
+                    overlaps++;
+                }
+            } catch (DateTimeParseException e) {
+                // Hibás adat az adatbázisban, hagyjuk figyelmen kívül
+            }
         }
 
-        if (c.getId() == 0) {
+        // ha már kettő másik van, akkor a mostani lenne a 3. => STOP
+        if (overlaps >= 2) {
+            showWarning("Nincs szabad kapacitás",
+                    "Ebben az időszakban már van két lefoglalt munka.\n"
+                    + "Válasszon másik időpontot.");
+            return false;
+        }
+        return true;
+    }
+
+
+    // --- DAO Segédfüggvények (Upsert) ---
+
+    /**
+     * Létrehoz egy új ügyfelet, vagy frissíti a meglévőt az űrlap adatai alapján.
+     * @return Az ügyfél ID-ja (akár új, akár meglévő).
+     */
+    private int upsertCustomer(Customer c, String phoneStr, String emailStr) {
+        if (c == null) throw new IllegalArgumentException("Az ügyfél nem lehet null.");
+        
+        c.setPhone(phoneStr != null ? phoneStr.trim() : c.getPhone());
+        c.setEmail(emailStr != null ? emailStr.trim() : c.getEmail());
+
+        if (c.getId() == null) { 
             int newId = customerDao.insert(c.getName(), c.getPhone(), c.getEmail());
             c.setId(newId);
             return newId;
@@ -543,45 +515,55 @@ public class AppointmentFormController {
     }
 
     /**
-     * Insert vagy Update a vehicles táblában az adott customerId-vel.
-     * Visszaadja az ID-t.
+     * Létrehoz egy új járművet, vagy frissíti a meglévőt az űrlap adatai alapján.
+     * @return A jármű ID-ja (akár új, akár meglévő).
      */
     private int upsertVehicle(Vehicle v, int customerId, String brandStr, String modelStr) {
-        if (v == null) {
-            throw new IllegalArgumentException("vehicle null");
-        }
-
-        if (brandStr != null && !brandStr.trim().isEmpty()) {
-            v.setBrand(brandStr.trim());
-        }
-
-        // ha az űrlapon gépelték be/át, onnan vesszük a gyártmány/típust
-        if (modelStr != null && !modelStr.trim().isEmpty()) {
-            v.setModel(modelStr.trim());
-        }
-
-        // ha van ownerId meződ a modelben, tartsuk szinkronban
-        try {
-            v.setOwnerId(customerId); // Vehicle-ben ez a mezőnév: ownerId
-        } catch (Throwable ignore) {
-            // ha nincs ilyen setter, semmi gond – a DAO paraméterben úgyis megkapja
-        }
-
-        // minimális védelem: rendszám ne legyen üres
+        if (v == null) throw new IllegalArgumentException("A jármű nem lehet null.");
         if (v.getPlate() == null || v.getPlate().trim().isEmpty()) {
             throw new IllegalArgumentException("A jármű rendszáma (plate) kötelező.");
         }
 
-        if (v.getId() == 0) {
-            // ÚJ jármű – FIGYELEM: a DAO szignója (plate, makeModel, customerId)
+        // Frissítés az űrlap mezőiből, ha ki vannak töltve
+        if (brandStr != null && !brandStr.trim().isEmpty()) v.setBrand(brandStr.trim());
+        if (modelStr != null && !modelStr.trim().isEmpty()) v.setModel(modelStr.trim());
+        v.setOwnerId(customerId); // Mindig frissítjük a tulajdonost
+
+        if (v.getId() == null) { 
             int newId = vehicleDao.insert(v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getFuel_type(), customerId);
             v.setId(newId);
             return newId;
         } else {
-            // Meglévő jármű frissítése – szignó: (id, plate, makeModel, customerId)
             vehicleDao.update(v.getId(), v.getPlate(), v.getVin(), v.getEngine_no(), v.getBrand(), v.getModel(), v.getYear(), v.getFuel_type(), customerId);
             return v.getId();
         }
     }
 
+    // --- UI Segédfüggvények ---
+
+    /**
+     * Bezárja az űrlap ablakát, és beállítja az 'UserData'-t (siker/mégse).
+     * @param saved true, ha a mentés sikeres volt, false, ha 'Mégse'.
+     */
+    private void closeWindow(boolean saved) {
+        Stage stage = (Stage) customerCombo.getScene().getWindow();
+        stage.setUserData(saved); // Ezt olvassa ki a Forms.java
+        stage.close();
+    }
+
+    /** Egységesített hibaüzenet (Warning). */
+    private void showWarning(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING, message);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+    }
+
+    /** Egységesített hibaüzenet (Error). */
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+    }
 }

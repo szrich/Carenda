@@ -1,30 +1,35 @@
 package hu.carenda.app.model;
 
-import javafx.beans.property.*;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 
 /**
- * Munkalap (Service Job Card) modell – null-értékeket is kezel (IntegerProperty)
+ * Munkalap (Service Job Card) modell
  */
 public class ServiceJobCard {
 
-    private final IntegerProperty id = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> id = new SimpleObjectProperty<>(null);
     private final StringProperty jobcard_no = new SimpleStringProperty();
-    private final IntegerProperty appointment_id = new SimpleIntegerProperty();
-    private final IntegerProperty vehicle_id = new SimpleIntegerProperty();
-    private final IntegerProperty customer_id = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> appointment_id = new SimpleObjectProperty<>(null);
+    private final ObjectProperty<Integer> vehicle_id = new SimpleObjectProperty<>(null);
+    private final ObjectProperty<Integer> customer_id = new SimpleObjectProperty<>(null);
     private final StringProperty fault_desc = new SimpleStringProperty();
     private final StringProperty repair_note = new SimpleStringProperty();
     private final StringProperty diagnosis = new SimpleStringProperty();
     private final StringProperty internal_note = new SimpleStringProperty();
     private final StringProperty status = new SimpleStringProperty();
-    private final IntegerProperty assignee_user_id = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> assignee_user_id = new SimpleObjectProperty<>(null);
     private final StringProperty created_at = new SimpleStringProperty();
     private final StringProperty updated_at = new SimpleStringProperty();
     private final StringProperty finished_at = new SimpleStringProperty();
-    private final IntegerProperty odometer_km = new SimpleIntegerProperty();
-    private final IntegerProperty fuel_level_eighths = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> odometer_km = new SimpleObjectProperty<>(null);
+    private final ObjectProperty<Integer> fuel_level_eighths = new SimpleObjectProperty<>(null);
     private final StringProperty currency_code = new SimpleStringProperty();
-    private final IntegerProperty advance_cents = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> advance_cents = new SimpleObjectProperty<>(null);
+
+    // JOIN-olt mezők 
     private final StringProperty ownerName = new SimpleStringProperty();
     private final StringProperty plate = new SimpleStringProperty();
     private final StringProperty brand = new SimpleStringProperty();
@@ -58,10 +63,12 @@ public class ServiceJobCard {
         setAdvance_cents(advance_cents);
     }
 
+    // --- Getterek, Setterek, Property-k ---
+
     // ---- ID ----
     public Integer getId() { return id.get(); }
-    public void setId(Integer v) { id.set(v == null ? 0 : v); }
-    public IntegerProperty idProperty() { return id; }
+    public void setId(Integer v) { id.set(v); }
+    public ObjectProperty<Integer> idProperty() { return id; }
 
     // ---- JOB CARD NO ----
     public String getJobcard_no() { return jobcard_no.get(); }
@@ -70,18 +77,18 @@ public class ServiceJobCard {
 
     // ---- APPOINTMENT ----
     public Integer getAppointment_id() { return appointment_id.get(); }
-    public void setAppointment_id(Integer v) { appointment_id.set(v == null ? 0 : v); }
-    public IntegerProperty appointment_idProperty() { return appointment_id; }
+    public void setAppointment_id(Integer v) { appointment_id.set(v); }
+    public ObjectProperty<Integer> appointment_idProperty() { return appointment_id; }
 
     // ---- VEHICLE ----
     public Integer getVehicle_id() { return vehicle_id.get(); }
-    public void setVehicle_id(Integer v) { vehicle_id.set(v == null ? 0 : v); }
-    public IntegerProperty vehicle_idProperty() { return vehicle_id; }
+    public void setVehicle_id(Integer v) { vehicle_id.set(v); } 
+    public ObjectProperty<Integer> vehicle_idProperty() { return vehicle_id; }
 
     // ---- CUSTOMER ----
     public Integer getCustomer_id() { return customer_id.get(); }
-    public void setCustomer_id(Integer v) { customer_id.set(v == null ? 0 : v); }
-    public IntegerProperty customer_idProperty() { return customer_id; }
+    public void setCustomer_id(Integer v) { customer_id.set(v); }
+    public ObjectProperty<Integer> customer_idProperty() { return customer_id; }
 
     // ---- TEXT FIELDS ----
     public String getFault_desc() { return fault_desc.get(); }
@@ -107,8 +114,8 @@ public class ServiceJobCard {
 
     // ---- ASSIGNEE ----
     public Integer getAssignee_user_id() { return assignee_user_id.get(); }
-    public void setAssignee_user_id(Integer v) { assignee_user_id.set(v == null ? 0 : v); }
-    public IntegerProperty assignee_user_idProperty() { return assignee_user_id; }
+    public void setAssignee_user_id(Integer v) { assignee_user_id.set(v); }
+    public ObjectProperty<Integer> assignee_user_idProperty() { return assignee_user_id; }
 
     // ---- DATES ----
     public String getCreated_at() { return created_at.get(); }
@@ -125,13 +132,13 @@ public class ServiceJobCard {
 
     // ---- ODOMETER ----
     public Integer getOdometer_km() { return odometer_km.get(); }
-    public void setOdometer_km(Integer v) { odometer_km.set(v == null ? 0 : v); }
-    public IntegerProperty odometer_kmProperty() { return odometer_km; }
+    public void setOdometer_km(Integer v) { odometer_km.set(v); }
+    public ObjectProperty<Integer> odometer_kmProperty() { return odometer_km; }
 
     // ---- FUEL LEVEL ----
     public Integer getFuel_level_eighths() { return fuel_level_eighths.get(); }
-    public void setFuel_level_eighths(Integer v) { fuel_level_eighths.set(v == null ? 0 : v); }
-    public IntegerProperty fuel_level_eighthsProperty() { return fuel_level_eighths; }
+    public void setFuel_level_eighths(Integer v) { fuel_level_eighths.set(v); }
+    public ObjectProperty<Integer> fuel_level_eighthsProperty() { return fuel_level_eighths; }
 
     // ---- CURRENCY ----
     public String getCurrency_code() { return currency_code.get(); }
@@ -140,9 +147,10 @@ public class ServiceJobCard {
 
     // ---- ADVANCE ----
     public Integer getAdvance_cents() { return advance_cents.get(); }
-    public void setAdvance_cents(Integer v) { advance_cents.set(v == null ? 0 : v); }
-    public IntegerProperty advance_centsProperty() { return advance_cents; }
+    public void setAdvance_cents(Integer v) { advance_cents.set(v); }
+    public ObjectProperty<Integer> advance_centsProperty() { return advance_cents; }
     
+    // ---- JOIN-olt mezők ----
     public String getOwnerName() { return ownerName.get(); }
     public void setOwnerName(String v) { ownerName.set(v); }
     public StringProperty ownerNameProperty() { return ownerName; }

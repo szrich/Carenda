@@ -3,14 +3,34 @@ package hu.carenda.app.repository;
 import hu.carenda.app.db.Database;
 import hu.carenda.app.model.ServiceJobCardPart;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceJobCardPartDao {
 
-    private ServiceJobCardPart map(ResultSet rs) throws Exception {
+    // --- Egységesített segédfüggvény a NULL kezelésre ---
+
+    /**
+     * Beállít egy String értéket, vagy NULL-t, ha az érték null vagy üres (blank).
+     * (Hozzáadva az egységességért, pl. a 'sku' mezőhöz)
+     */
+    private void setStringOrNull(PreparedStatement ps, int index, String value) throws SQLException {
+        if (value != null && !value.isBlank()) {
+            ps.setString(index, value);
+        } else {
+            ps.setNull(index, Types.VARCHAR);
+        }
+    }
+
+    // --- DAO Metódusok ---
+
+    private ServiceJobCardPart map(ResultSet rs) throws SQLException {
         ServiceJobCardPart p = new ServiceJobCardPart();
         p.setId(rs.getInt("id"));
         p.setSjc_id(rs.getInt("sjc_id"));
@@ -25,6 +45,7 @@ public class ServiceJobCardPartDao {
 
     /**
      * Összes alkatrész tétel (debug / admin).
+     * @return 
      */
     public List<ServiceJobCardPart> findAll() {
         String sql = """
@@ -32,9 +53,9 @@ public class ServiceJobCardPartDao {
               FROM servicejobcard_part
              ORDER BY sjc_id, sort_order, id
             """;
-        try (var c = Database.get();
-             var st = c.createStatement();
-             var rs = st.executeQuery(sql)) {
+        try (Connection c = Database.get();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
 
             List<ServiceJobCardPart> out = new ArrayList<>();
             while (rs.next()) {
@@ -42,13 +63,15 @@ public class ServiceJobCardPartDao {
             }
             return out;
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.findAll", e);
         }
     }
 
     /**
      * Adott munkalaphoz (sjc_id) tartozó alkatrész tételek.
+     * @param sjcId
+     * @return 
      */
     public List<ServiceJobCardPart> findByJobCard(int sjcId) {
         String sql = """
@@ -57,8 +80,8 @@ public class ServiceJobCardPartDao {
              WHERE sjc_id=?
              ORDER BY sort_order, id
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, sjcId);
 
@@ -70,13 +93,15 @@ public class ServiceJobCardPartDao {
                 return out;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.findByJobCard", e);
         }
     }
 
     /**
      * Egy alkatrész sor lekérése id alapján.
+     * @param id
+     * @return 
      */
     public ServiceJobCardPart findById(int id) {
         String sql = """
@@ -84,8 +109,8 @@ public class ServiceJobCardPartDao {
               FROM servicejobcard_part
              WHERE id=?
             """;
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
 
@@ -93,14 +118,22 @@ public class ServiceJobCardPartDao {
                 return rs.next() ? map(rs) : null;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.findById", e);
         }
     }
 
     /**
      * Új alkatrész tétel beszúrása.
      * Visszatér az új rekord ID-jával.
+     * @param sjcId
+     * @param sku
+     * @param name
+     * @param quantity
+     * @param unitPriceCents
+     * @param vatPercent
+     * @param sortOrder
+     * @return 
      */
     public int insert(int sjcId,
                       String sku,
@@ -116,17 +149,11 @@ public class ServiceJobCardPartDao {
             VALUES (?,?,?,?,?,?,?)
             """;
 
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, sjcId);
-
-            if (sku != null && !sku.isBlank()) {
-                ps.setString(2, sku);
-            } else {
-                ps.setNull(2, Types.VARCHAR); // ugyanígy kezeled pl. VIN-nél is a VehicleDao.insert-ben. :contentReference[oaicite:7]{index=7}
-            }
-
+            setStringOrNull(ps, 2, sku);
             ps.setString(3, name);
             ps.setDouble(4, quantity);
             ps.setInt(5, unitPriceCents);
@@ -136,17 +163,27 @@ public class ServiceJobCardPartDao {
             ps.executeUpdate();
 
             try (var keys = ps.getGeneratedKeys()) {
-                return keys.next() ? keys.getInt(1) : 0;
+                if (keys.next()) {
+                    return keys.getInt(1);
+                } else {
+                    throw new SQLException("Alkatrész tétel létrehozása sikertelen, nem kaptunk ID-t.");
+                }
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.insert", e);
         }
     }
 
     /**
      * Sor módosítása (általában név, mennyiség, ár, áfa, sorrend).
-     * A sjc_id-t itt sem piszkáljuk.
+     * @param id
+     * @param sku
+     * @param name
+     * @param quantity
+     * @param unitPriceCents
+     * @param vatPercent
+     * @param sortOrder
      */
     public void update(int id,
                        String sku,
@@ -167,15 +204,10 @@ public class ServiceJobCardPartDao {
              WHERE id=?
             """;
 
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
-            if (sku != null && !sku.isBlank()) {
-                ps.setString(1, sku);
-            } else {
-                ps.setNull(1, Types.VARCHAR);
-            }
-
+            setStringOrNull(ps, 1, sku);
             ps.setString(2, name);
             ps.setDouble(3, quantity);
             ps.setInt(4, unitPriceCents);
@@ -185,42 +217,42 @@ public class ServiceJobCardPartDao {
 
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) { 
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.update", e);
         }
     }
 
     /**
      * Egy alkatrész tétel törlése id alapján.
+     * @param id
      */
     public void delete(int id) {
-        String sql = "DELETE FROM servicejobcard_part WHERE id=?";
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        String sql = "DELETE FROM servicejobcard_part WHERE id=?"; 
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.delete", e);
         }
     }
 
     /**
      * Egy teljes munkalaphoz tartozó ÖSSZES alkatrész törlése.
-     * (Ez igazából opcionális, mert az idegen kulcs sjc_id -> servicejobcard(id)
-     * ON DELETE CASCADE, tehát ha törlöd a munkalapot, ezek is mennek vele. :contentReference[oaicite:8]{index=8})
+     * @param sjcId
      */
     public void deleteByJobCard(int sjcId) {
         String sql = "DELETE FROM servicejobcard_part WHERE sjc_id=?";
-        try (var c = Database.get();
-             var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, sjcId);
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardPartDao.deleteByJobCard", e);
         }
     }
 }

@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="hu.carenda.app.ui.DashboardController"
+            fx:controller="hu.carenda.app.ui.DashboardFormController"
             stylesheets="@../css/app.css">
     <top>
         <ToolBar>

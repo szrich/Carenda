@@ -9,7 +9,6 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="hu.carenda.app.ui.ServiceJobCardFormController">
 
-    <!-- Fejléc -->
     <top>
         <HBox spacing="12">
             <padding>
@@ -24,7 +23,6 @@
         </HBox>
     </top>
 
-    <!-- Görgethető központi tartalom -->
     <center>
         <ScrollPane fitToWidth="true" BorderPane.alignment="CENTER">
             <content>
@@ -33,13 +31,16 @@
                         <Insets top="12" right="16" bottom="16" left="16"/>
                     </padding>
 
-                    <!-- Alapadatok: Ügyfél + Jármű + Időpontok -->
                     <TitledPane text="Alapadatok" collapsible="false">
                         <content>
                             <GridPane hgap="12" vgap="10">
                                 <padding>
                                     <Insets top="12" right="12" bottom="12" left="12"/>
                                 </padding>
+
+                                <fx:define>
+                                    <ToggleGroup fx:id="fuelLevelToggleGroup"/>
+                                </fx:define>
                                 <columnConstraints>
                                     <ColumnConstraints halignment="RIGHT" percentWidth="18"/>
                                     <ColumnConstraints percentWidth="32" hgrow="ALWAYS"/>
@@ -47,7 +48,6 @@
                                     <ColumnConstraints percentWidth="32" hgrow="ALWAYS"/>
                                 </columnConstraints>
 
-                                <!-- Sor 0 -->
                                 <Label text="Munkalap #" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                                 <TextField fx:id="jobcardNo" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
                                 <Label text="Felvétel ideje" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
@@ -58,35 +58,39 @@
                                     <Spinner fx:id="createdMinuteSpinner" prefWidth="80"/>
                                 </HBox>
 
-                                <!-- Sor 1 -->
                                 <Label text="Ügyfél neve" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
                                 <TextField fx:id="customerName" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
                                 <Label text="Telefon" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
                                 <TextField fx:id="phone" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
 
-                                <!-- Sor 2 -->
                                 <Label text="E-mail" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                                 <TextField fx:id="email" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                                <!-- Sor 3 -->
+                                <Label text="Üzemanyagszint" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                                <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="2" GridPane.columnIndex="3">
+                                    <children>
+                                        <RadioButton fx:id="fuelEmpty" text="üres" toggleGroup="$fuelLevelToggleGroup"/>
+                                        <RadioButton fx:id="fuelQuarter" text="negyed" toggleGroup="$fuelLevelToggleGroup"/>
+                                        <RadioButton fx:id="fuelHalf" text="fél" toggleGroup="$fuelLevelToggleGroup"/>
+                                        <RadioButton fx:id="fuelThreeQuarter" text="3/4" toggleGroup="$fuelLevelToggleGroup"/>
+                                        <RadioButton fx:id="fuelFull" text="tele" toggleGroup="$fuelLevelToggleGroup"/>
+                                    </children>
+                                </HBox>
                                 <Label text="Rendszám" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
                                 <TextField fx:id="plate" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
                                 <Label text="VIN" GridPane.rowIndex="3" GridPane.columnIndex="2"/>
                                 <TextField fx:id="vin" GridPane.rowIndex="3" GridPane.columnIndex="3"/>
 
-                                <!-- Sor 4 -->
                                 <Label text="Gyártmány" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
                                 <TextField fx:id="brand" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
                                 <Label text="Típus" GridPane.rowIndex="4" GridPane.columnIndex="2"/>
                                 <TextField fx:id="model" GridPane.rowIndex="4" GridPane.columnIndex="3"/>
 
-                                <!-- Sor 5 -->
                                 <Label text="Évjárat" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
                                 <TextField fx:id="year" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
                                 <Label text="Km-óra (km)" GridPane.rowIndex="5" GridPane.columnIndex="2"/>
                                 <TextField fx:id="odometerKm" GridPane.rowIndex="5" GridPane.columnIndex="3"/>
 
-                                <!-- Sor 6 -->
                                 <Label text="Módosítás ideje" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
                                 <HBox spacing="8" GridPane.rowIndex="6" GridPane.columnIndex="1">
                                     <DatePicker fx:id="modificationDate"/>
@@ -105,7 +109,6 @@
                         </content>
                     </TitledPane>
 
-                    <!-- Hiba / Javítás / Megjegyzések középre igazítva -->
                     <TitledPane text="Hiba és megállapítások" collapsible="false">
                         <content>
                             <GridPane hgap="12" vgap="10">
@@ -136,7 +139,6 @@
                         </content>
                     </TitledPane>
 
-                    <!-- Tétellisták: Munkaidő és Alkatrészek egymás mellett -->
                     <HBox spacing="16">
                         <VBox spacing="8" VBox.vgrow="ALWAYS">
                             <Label text="Elvégzett munka"/>
@@ -230,7 +232,6 @@
                         </VBox>
                     </HBox>
 
-                    <!-- Összesítő sáv -->
                     <TitledPane text="Pénzügyi összesítő" collapsible="false">
                         <content>
                             <GridPane hgap="12" vgap="8">
@@ -243,10 +244,12 @@
                                 </columnConstraints>
 
                                 <Label text="Részösszeg (nettó):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                <TextField fx:id="subtotalNet" GridPane.rowIndex="0" GridPane.columnIndex="1" editable="false"/>
+                                <TextField fx:id="subtotalNet" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                                           editable="false"/>
 
                                 <Label text="ÁFA összege:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                <TextField fx:id="vatAmount" GridPane.rowIndex="1" GridPane.columnIndex="1" editable="false"/>
+                                <TextField fx:id="vatAmount" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                                           editable="false"/>
 
                                 <Label text="Végösszeg (bruttó):" style="-fx-font-weight: bold;"
                                        GridPane.rowIndex="2" GridPane.columnIndex="0"/>
@@ -269,7 +272,6 @@
         </ScrollPane>
     </center>
 
-    <!-- Alsó gombsor -->
     <bottom>
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <padding>

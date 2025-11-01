@@ -6,7 +6,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="hu.carenda.app.ui.ScheduleController"
+            fx:controller="hu.carenda.app.ui.ScheduleFormController"
             prefWidth="860" prefHeight="520">
 
     <fx:define>

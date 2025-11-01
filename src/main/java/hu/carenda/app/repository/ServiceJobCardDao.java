@@ -3,7 +3,11 @@ package hu.carenda.app.repository;
 import hu.carenda.app.db.Database;
 import hu.carenda.app.model.ServiceJobCard;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.time.Year;
 import java.util.ArrayList;
@@ -11,8 +15,13 @@ import java.util.List;
 
 public class ServiceJobCardDao {
 
-    // Segéd: biztonságos int bind (kezeli a null-t)
-    private void bindNullableInt(java.sql.PreparedStatement ps, int index, Integer value) throws Exception {
+    // --- Egységesített segédfüggvények a NULL kezelésre ---
+
+    /**
+     * Beállít egy Integer értéket, vagy NULL-t, ha az érték null.
+     * (Átnevezve bindNullableInt-ről az egységességért)
+     */
+    private void setIntOrNull(PreparedStatement ps, int index, Integer value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.INTEGER);
         } else {
@@ -20,8 +29,25 @@ public class ServiceJobCardDao {
         }
     }
 
-    // Eredményhalmaz -> modell
-    private ServiceJobCard map(ResultSet rs) throws Exception {
+    /**
+     * Beállít egy String értéket, vagy NULL-t, ha az érték null vagy üres (blank).
+     * (Hozzáadva az egységességért)
+     */
+    private void setStringOrNull(PreparedStatement ps, int index, String value) throws SQLException {
+        if (value != null && !value.isBlank()) {
+            ps.setString(index, value);
+        } else {
+            ps.setNull(index, Types.VARCHAR);
+        }
+    }
+
+    // --- DAO Metódusok ---
+
+    /**
+     * Eredményhalmaz -> modell
+     * (rs.getObject(..., Integer.class) helyes, mert null-t ad vissza DB NULL esetén)
+     */
+    private ServiceJobCard map(ResultSet rs) throws SQLException {
         ServiceJobCard s = new ServiceJobCard();
 
         s.setId(rs.getObject("id", Integer.class));
@@ -46,29 +72,37 @@ public class ServiceJobCardDao {
         return s;
     }
 
+    /**
+     * Beágyazott osztály a munkalap végösszegekhez.
+     */
     public static class TotalsRow {
-
         public int sjc_id;
         public int subtotal_net_cents;
         public int vat_cents;
         public int total_gross_cents;
-        public Integer advance_cents;      // lehet null
+        public Integer advance_cents;
         public int amount_due_cents;
     }
 
+    /**
+     * Munkalap végösszegek lekérése (view_sjc_totals nézetből).
+     * @param sjcId
+     * @return 
+     */
     public TotalsRow fetchTotals(int sjcId) {
         String sql = """
-        SELECT sjc_id,
-               subtotal_net_cents,
-               vat_cents,
-               total_gross_cents,
-               advance_cents,
-               amount_due_cents
-        FROM view_sjc_totals
-        WHERE sjc_id = ?
-    """;
+            SELECT sjc_id,
+                   subtotal_net_cents,
+                   vat_cents,
+                   total_gross_cents,
+                   advance_cents,
+                   amount_due_cents
+              FROM view_sjc_totals
+             WHERE sjc_id = ?
+            """;
 
-        try (var c = hu.carenda.app.db.Database.get(); var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, sjcId);
             try (var rs = ps.executeQuery()) {
@@ -78,7 +112,7 @@ public class ServiceJobCardDao {
                     t.subtotal_net_cents = rs.getInt("subtotal_net_cents");
                     t.vat_cents = rs.getInt("vat_cents");
                     t.total_gross_cents = rs.getInt("total_gross_cents");
-                    // advance_cents lehet null az rs-ben
+
                     int advTmp = rs.getInt("advance_cents");
                     if (rs.wasNull()) {
                         t.advance_cents = null;
@@ -89,12 +123,16 @@ public class ServiceJobCardDao {
                     return t;
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.fetchTotals", e);
         }
         return null;
     }
 
+    /**
+     * Összes munkalap lekérése (JOIN nélkül).
+     * @return 
+     */
     public List<ServiceJobCard> findAll() {
         String sql = """
             SELECT id, jobcard_no, appointment_id, vehicle_id, customer_id,
@@ -102,23 +140,26 @@ public class ServiceJobCardDao {
                    assignee_user_id, created_at, updated_at, finished_at,
                    odometer_km, fuel_level_eighths, currency_code, advance_cents
               FROM servicejobcard
-          ORDER BY id
-        """;
+             ORDER BY id
+            """;
 
-        try (var c = Database.get(); var st = c.createStatement(); var rs = st.executeQuery(sql)) {
+        try (Connection c = Database.get();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
 
             List<ServiceJobCard> out = new ArrayList<>();
             while (rs.next()) {
                 out.add(map(rs));
             }
             return out;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.findAll", e);
         }
     }
 
     /**
-     * A controller ezt hívja – itt egyszerűen ugyanazt adjuk vissza.
+     * Összes munkalap lekérése, ügyfél és jármű adatokkal JOIN-olva.
+     * @return 
      */
     public List<ServiceJobCard> findAllWithOwnerAndVehicleData() {
         String sql = """
@@ -130,12 +171,14 @@ public class ServiceJobCardDao {
                    v.plate AS vehicle_plate,
                    v.brand AS vehicle_brand,
                    v.model AS vehicle_model
-            FROM servicejobcard s
-            JOIN customers c ON c.id = s.customer_id
-            LEFT JOIN vehicles v ON v.id = s.vehicle_id
-        ORDER BY id
-        """;
-        try (var c = Database.get(); var st = c.createStatement(); var rs = st.executeQuery(sql)) {
+              FROM servicejobcard s
+              JOIN customers c ON c.id = s.customer_id
+              LEFT JOIN vehicles v ON v.id = s.vehicle_id
+             ORDER BY id
+            """;
+        try (Connection c = Database.get();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
 
             List<ServiceJobCard> out = new ArrayList<>();
             while (rs.next()) {
@@ -148,12 +191,17 @@ public class ServiceJobCardDao {
                 out.add(s);
             }
             return out;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.findAllWithOwnerAndVehicleData", e);
         }
     }
 
-    public void insert(ServiceJobCard jc) {
+    /**
+     * Új munkalap beszúrása.
+     * @param jc
+     * @return Visszatér az adatbázis által generált új ID-val.
+     */
+    public int insert(ServiceJobCard jc) {
         String sql = """
             INSERT INTO servicejobcard (
                 jobcard_no,
@@ -174,34 +222,50 @@ public class ServiceJobCardDao {
                 advance_cents
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+            """;
 
-        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, jc.getJobcard_no());
-            bindNullableInt(ps, 2, jc.getAppointment_id());
-            bindNullableInt(ps, 3, jc.getVehicle_id());
-            bindNullableInt(ps, 4, jc.getCustomer_id());
-            ps.setString(5, jc.getFault_desc());
-            ps.setString(6, jc.getRepair_note());
-            ps.setString(7, jc.getDiagnosis());
-            ps.setString(8, jc.getInternal_note());
+            setIntOrNull(ps, 2, jc.getAppointment_id());
+            setIntOrNull(ps, 3, jc.getVehicle_id());
+            setIntOrNull(ps, 4, jc.getCustomer_id());
+            setStringOrNull(ps, 5, jc.getFault_desc());
+            setStringOrNull(ps, 6, jc.getRepair_note());
+            setStringOrNull(ps, 7, jc.getDiagnosis());
+            setStringOrNull(ps, 8, jc.getInternal_note());
             ps.setString(9, jc.getStatus());
-            bindNullableInt(ps, 10, jc.getAssignee_user_id());
-            ps.setString(11, jc.getCreated_at());
-            ps.setString(12, jc.getUpdated_at());
-            ps.setString(13, jc.getFinished_at());
-            bindNullableInt(ps, 14, jc.getOdometer_km());
-            bindNullableInt(ps, 15, jc.getFuel_level_eighths());
-            bindNullableInt(ps, 16, jc.getAdvance_cents());
+            setIntOrNull(ps, 10, jc.getAssignee_user_id());
+            setStringOrNull(ps, 11, jc.getCreated_at());
+            setStringOrNull(ps, 12, jc.getUpdated_at());
+            setStringOrNull(ps, 13, jc.getFinished_at());
+            setIntOrNull(ps, 14, jc.getOdometer_km());
+            setIntOrNull(ps, 15, jc.getFuel_level_eighths());
+            setIntOrNull(ps, 16, jc.getAdvance_cents());
 
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Hiba a ServiceJobCard beszúrásakor", e);
+            try (var keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int newId = keys.getInt(1);
+                    jc.setId(newId);
+                    return newId;
+                } else {
+                    throw new SQLException("Munkalap létrehozása sikertelen, nem kaptunk ID-t.");
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.insert", e);
         }
     }
 
+    /**
+     * Munkalap keresése Appointment ID alapján.
+     * @param appointmentId
+     * @return 
+     */
     public ServiceJobCard findByAppointmentId(int appointmentId) {
         String sql = """
             SELECT id, jobcard_no, appointment_id, vehicle_id, customer_id,
@@ -211,21 +275,26 @@ public class ServiceJobCardDao {
               FROM servicejobcard
              WHERE appointment_id = ?
              LIMIT 1
-        """;
+            """;
 
-        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, appointmentId);
 
             try (var rs = ps.executeQuery()) {
                 return rs.next() ? map(rs) : null;
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.findByAppointmentId", e);
         }
-
     }
 
+    /**
+     * Keresés munkalapszám, rendszám, ügyfél, stb. alapján.
+     * @param q
+     * @return 
+     */
     public List<ServiceJobCard> searchWithOwnerAndVehicleData(String q) {
         String like = "%" + q.trim().toLowerCase() + "%";
 
@@ -249,7 +318,6 @@ public class ServiceJobCardDao {
             s.fuel_level_eighths AS fuel_level_eighths,
             s.currency_code      AS currency_code,
             s.advance_cents      AS advance_cents,
-
             c.name               AS owner_name,
             v.plate              AS vehicle_plate,
             v.brand              AS vehicle_brand,
@@ -265,9 +333,9 @@ public class ServiceJobCardDao {
         ORDER BY s.id
         """;
 
-        try (var conn = Database.get(); var ps = conn.prepareStatement(sql)) {
+        try (Connection conn = Database.get();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            // ugyanazt az 5 paramétert rakjuk be mindenhova
             ps.setString(1, like);
             ps.setString(2, like);
             ps.setString(3, like);
@@ -277,24 +345,26 @@ public class ServiceJobCardDao {
             try (var rs = ps.executeQuery()) {
                 List<ServiceJobCard> out = new ArrayList<>();
                 while (rs.next()) {
-                    ServiceJobCard s = map(rs); // alap mezők beállítva
-
-                    // plusz mezők betöltése (ugyanúgy, mint a findAllWithOwnerAndVehicleData()-ban)
+                    ServiceJobCard s = map(rs); // alap mezők
+                    // plusz mezők
                     s.setOwnerName(rs.getString("owner_name"));
                     s.setPlate(rs.getString("vehicle_plate"));
                     s.setBrand(rs.getString("vehicle_brand"));
                     s.setModel(rs.getString("vehicle_model"));
-
                     out.add(s);
                 }
                 return out;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.searchWithOwnerAndVehicleData", e);
         }
     }
 
+    /**
+     * Meglévő munkalap frissítése.
+     * @param jc
+     */
     public void update(ServiceJobCard jc) {
         String sql = """
             UPDATE servicejobcard
@@ -316,39 +386,40 @@ public class ServiceJobCardDao {
                    currency_code = ?,
                    advance_cents = ?
              WHERE id = ?
-        """;
+            """;
 
-        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, jc.getJobcard_no());
-            bindNullableInt(ps, 2, jc.getAppointment_id());
-            bindNullableInt(ps, 3, jc.getVehicle_id());
-            bindNullableInt(ps, 4, jc.getCustomer_id());
-            ps.setString(5, jc.getFault_desc());
-            ps.setString(6, jc.getRepair_note());
-            ps.setString(7, jc.getDiagnosis());
-            ps.setString(8, jc.getInternal_note());
+            setIntOrNull(ps, 2, jc.getAppointment_id());
+            setIntOrNull(ps, 3, jc.getVehicle_id());
+            setIntOrNull(ps, 4, jc.getCustomer_id());
+            setStringOrNull(ps, 5, jc.getFault_desc());
+            setStringOrNull(ps, 6, jc.getRepair_note());
+            setStringOrNull(ps, 7, jc.getDiagnosis());
+            setStringOrNull(ps, 8, jc.getInternal_note());
             ps.setString(9, jc.getStatus());
-            bindNullableInt(ps, 10, jc.getAssignee_user_id());
-            ps.setString(11, jc.getCreated_at());
-            ps.setString(12, jc.getUpdated_at());
-            ps.setString(13, jc.getFinished_at());
-            bindNullableInt(ps, 14, jc.getOdometer_km());
-            bindNullableInt(ps, 15, jc.getFuel_level_eighths());
-            ps.setString(16, jc.getCurrency_code());
-            bindNullableInt(ps, 17, jc.getAdvance_cents());
-            bindNullableInt(ps, 18, jc.getId()); // WHERE id = ?
+            setIntOrNull(ps, 10, jc.getAssignee_user_id());
+            setStringOrNull(ps, 11, jc.getCreated_at());
+            setStringOrNull(ps, 12, jc.getUpdated_at());
+            setStringOrNull(ps, 13, jc.getFinished_at());
+            setIntOrNull(ps, 14, jc.getOdometer_km());
+            setIntOrNull(ps, 15, jc.getFuel_level_eighths());
+            setStringOrNull(ps, 16, jc.getCurrency_code());
+            setIntOrNull(ps, 17, jc.getAdvance_cents());
+            setIntOrNull(ps, 18, jc.getId());
 
             ps.executeUpdate();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Hiba a ServiceJobCard frissítésekor", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.update", e);
         }
     }
 
     /**
-     * Legközelebbi elérhető jobcard_no generálása. Formátum: YYYY-000001,
-     * YYYY-000002, ...
+     * Legközelebbi elérhető jobcard_no generálása. Formátum: YYYY-000001, ...
+     * @return 
      */
     public String generateNextJobCardNo() {
         int currentYear = Year.now().getValue();
@@ -359,9 +430,10 @@ public class ServiceJobCardDao {
              WHERE jobcard_no LIKE ?
              ORDER BY jobcard_no DESC
              LIMIT 1
-        """;
+            """;
 
-        try (var c = Database.get(); var ps = c.prepareStatement(sql)) {
+        try (Connection c = Database.get();
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, currentYear + "-%");
 
@@ -371,7 +443,11 @@ public class ServiceJobCardDao {
                     String[] parts = lastNo.split("-");
                     int next = 1;
                     if (parts.length == 2) {
-                        next = Integer.parseInt(parts[1]) + 1;
+                        try {
+                            next = Integer.parseInt(parts[1]) + 1;
+                        } catch (NumberFormatException e) {
+                            next = 1;
+                        }
                     }
                     return String.format("%d-%06d", currentYear, next);
                 } else {
@@ -379,8 +455,8 @@ public class ServiceJobCardDao {
                     return String.format("%d-%06d", currentYear, 1);
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Nem sikerült jobcard_no-t generálni", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Adatbázis hiba: ServiceJobCardDao.generateNextJobCardNo", e);
         }
     }
 }

@@ -7,7 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
-public class UsersAdminController {
+public class UsersAdminFormController {
 
     @FXML private TableView<User> usersTable;
     @FXML private TableColumn<User, Number> colId;

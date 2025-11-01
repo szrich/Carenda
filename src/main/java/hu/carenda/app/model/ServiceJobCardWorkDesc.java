@@ -1,10 +1,17 @@
 package hu.carenda.app.model;
 
-import javafx.beans.property.*;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 
 public class ServiceJobCardWorkDesc {
 
-    private final IntegerProperty id = new SimpleIntegerProperty();
+    private final ObjectProperty<Integer> id = new SimpleObjectProperty<>(null);
     private final IntegerProperty sjc_id = new SimpleIntegerProperty();
     private final StringProperty name = new SimpleStringProperty();
     private final DoubleProperty hours = new SimpleDoubleProperty();
@@ -15,7 +22,7 @@ public class ServiceJobCardWorkDesc {
     public ServiceJobCardWorkDesc() {
     }
 
-    public ServiceJobCardWorkDesc(int id,
+    public ServiceJobCardWorkDesc(Integer id,
                                   int sjc_id,
                                   String name,
                                   double hours,
@@ -31,12 +38,12 @@ public class ServiceJobCardWorkDesc {
         setSort_order(sort_order);
     }
 
-    // id
-    public int getId() { return id.get(); }
-    public void setId(int v) { id.set(v); }
-    public IntegerProperty idProperty() { return id; }
+    // --- id ---
+    public Integer getId() { return id.get(); }
+    public void setId(Integer v) { id.set(v); }
+    public ObjectProperty<Integer> idProperty() { return id; }
 
-    // sjc_id (hivatkozás servicejobcard.id-re)
+    // --- sjc_id (hivatkozás servicejobcard.id-re) ---
     public int getSjc_id() { return sjc_id.get(); }
     public void setSjc_id(int v) { sjc_id.set(v); }
     public IntegerProperty sjc_idProperty() { return sjc_id; }

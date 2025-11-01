@@ -16,12 +16,12 @@
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/repository/VehicleDao.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/service/AuthService.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/AppointmentFormController.java
-/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/ChangePasswordController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/ChangePasswordFormController.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/CustomerFormController.java
-/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/DashboardController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/DashboardFormController.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/Forms.java
-/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/LoginController.java
-/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/ScheduleController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/LoginFormController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/ScheduleFormController.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/ServiceJobCardFormController.java
-/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/UsersAdminController.java
+/Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/UsersAdminFormController.java
 /Users/szric/NetBeansProjects/Carenda/src/main/java/hu/carenda/app/ui/VehicleFormController.java
